@@ -1,0 +1,21 @@
+[project]
+name = "legal-mapping"
+version = "0.1.0"
+description = "Legal document dependency graph tool"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic",
+    "pydantic>=2.0",
+    "python-docx",
+    "pypdf",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
