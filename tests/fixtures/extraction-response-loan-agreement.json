@@ -1,1 +1,68 @@
-{}
+{
+  "document_type": "loan_agreement",
+  "name": "Loan Agreement",
+  "parties": [
+    {
+      "name": "Riverside Holdings LLC",
+      "role": "Borrower",
+      "aliases": [
+        "Riverside"
+      ],
+      "entity_type": "LLC",
+      "jurisdiction": "Delaware"
+    },
+    {
+      "name": "First National Bank, N.A.",
+      "role": "Lender",
+      "aliases": [
+        "FNB"
+      ],
+      "entity_type": "Corporation",
+      "jurisdiction": "New York"
+    }
+  ],
+  "execution_date_raw": "January 15, 2025",
+  "execution_date_iso": "2025-01-15",
+  "defined_terms": [
+    {
+      "term": "Borrower",
+      "section_reference": "Preamble",
+      "definition_snippet": "Riverside Holdings LLC, a Delaware limited liability company"
+    },
+    {
+      "term": "Loan",
+      "section_reference": "Section 1.1",
+      "definition_snippet": "The loan in the principal amount of Five Million Dollars"
+    },
+    {
+      "term": "Maturity Date",
+      "section_reference": "Section 1.1",
+      "definition_snippet": "January 15, 2045"
+    }
+  ],
+  "key_provisions": [
+    {
+      "section_reference": "2.1",
+      "title": "Loan Amount",
+      "summary": "Principal amount of $5,000,000",
+      "provision_type": "covenant"
+    },
+    {
+      "section_reference": "4.1",
+      "title": "Repayment Terms",
+      "summary": "Monthly payments over 20 years at 5.5% fixed rate",
+      "provision_type": "covenant"
+    }
+  ],
+  "obligations": [
+    "Make monthly payments",
+    "Maintain property insurance",
+    "Provide annual financial statements"
+  ],
+  "document_references": [
+    "Guaranty Agreement",
+    "Deed of Trust",
+    "Operating Agreement"
+  ],
+  "summary": "Senior secured loan of $5M from First National Bank to Riverside Holdings for acquisition of Riverside Office Complex."
+}
