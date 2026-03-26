@@ -392,42 +392,48 @@
 
     <!-- ============================================================
          CDN Dependencies
-         Loaded in order. Pinned versions for stability.
-         SRI integrity hashes are generated at build time by Claude Code.
+         Loaded in order. Pinned versions with SRI integrity hashes.
          Each script has an onerror handler to flag CDN load failures.
          ============================================================ -->
     <!-- 1. Cytoscape.js - Core graph library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"
+            integrity="sha512-RcuA+PEnJcg1caTn53YLhZ3bYVFXphzcPL1BjBoAwFiA3bErav+AndZz1xrqpAtv/8Waep2X+9zn8KWpwacUSA=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape')"></script>
 
     <!-- 2. Dagre - Hierarchical layout algorithm -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
+            integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('dagre')"></script>
 
     <!-- 3. Cytoscape-dagre - Dagre adapter for Cytoscape -->
     <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"
+            integrity="sha512-17zwwzytpW8ZMn1Fg2DAtUCSOTmJd1GXWfatjWrUGmmOcBGj+dF/yYKo5mqeiBkyYnbnuXZ3ulvHA4MwIxzHlA=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-dagre')"></script>
 
     <!-- 4. Cytoscape-cola - Force-directed layout for Cytoscape -->
     <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"
+            integrity="sha512-rZBTbo9+0shCQcVTphY34s/jVn984eDaKSbCApIAEFbNhg/3AR3CkVYkkDW8XJ9LZhhyv/Hp0THwnP3wjE/3+g=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-cola')"></script>
 
     <!-- 5. jsPDF - PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('jspdf')"></script>
 
     <!-- 6. svg2pdf.js - SVG to PDF conversion -->
     <script src="https://unpkg.com/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"
+            integrity="sha512-FeI4nOAjlplO5ugQ+LsCb4jMxkuFkE4VEwT2hHn0BCVnE5/pcXosTCyGLRfort8gV0nmpqFePnYmd6DFoMQ5NA=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('svg2pdf')"></script>
 
     <!-- 7. jsPDF-AutoTable - PDF table generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
+            integrity="sha512-2/YdOMV+YNpanLCF5MdQwaoFRVbTmrJ4u4EpqS/USXAQNUDgI5uwYi6J98WVtJKcfe1AbgerygzDFToxAlOGEQ=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('jspdf-autotable')"></script>
 
@@ -576,7 +582,10 @@
                         script.hasAttribute('crossorigin') && script.getAttribute('crossorigin') === 'anonymous',
                         `CDN script has crossorigin="anonymous": ${src}`
                     );
-                    // SRI hashes are generated at build time; check onerror handler instead
+                    assert(
+                        script.hasAttribute('integrity') && script.getAttribute('integrity').length > 0,
+                        `CDN script has SRI integrity hash: ${src}`
+                    );
                     assert(
                         script.hasAttribute('onerror'),
                         `CDN script has onerror handler: ${src}`
