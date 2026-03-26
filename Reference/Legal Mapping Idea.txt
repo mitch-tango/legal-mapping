@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal Document Graph — New City Properties</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg2: #1e293b;
+    --bg3: #334155;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --border: #334155;
+    --border2: #475569;
+    --blue: #3b82f6;
+    --blue-dark: #1d4ed8;
+    --purple: #7c3aed;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* Topbar */
+  .topbar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+  .topbar-logo { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -.01em; }
+  .topbar-logo span { color: var(--text3); font-weight: 400; }
+  .deal-select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 12px; color: var(--text); max-width: 180px; cursor: pointer; }
+  .deal-select:focus { outline: none; border-color: var(--blue); }
+  .btn { border: 1px solid var(--border2); background: var(--bg2); color: var(--text); border-radius: 6px; padding: 5px 11px; font-size: 12px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+  .btn:hover { background: var(--bg3); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-blue { background: var(--blue-dark); color: #fff; border-color: var(--blue-dark); }
+  .btn-blue:hover { background: #1e40af; }
+  .btn-purple { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .btn-purple:hover { background: #6d28d9; }
+  .status { font-size: 11px; color: var(--text2); flex: 1; text-align: right; }
+  .spinner { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--border2); border-top-color: var(--blue); border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Body layout */
+  .body { display: flex; flex: 1; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar { width: 180px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-section { padding: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .sidebar-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .doc-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .doc-item { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-radius: 5px; cursor: pointer; font-size: 11px; color: var(--text2); transition: background .1s; }
+  .doc-item:hover, .doc-item.active { background: var(--bg3); color: var(--text); }
+  .doc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .doc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend-wrap { padding: 8px 10px 10px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .legend-line { width: 16px; height: 2px; flex-shrink: 0; border-radius: 1px; }
+  .legend-label { font-size: 10px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Canvas */
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+  #graph { width: 100%; height: 100%; }
+  .empty-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text3); pointer-events: none; }
+  .empty-state.has-btn { pointer-events: all; }
+  .empty-icon { font-size: 40px; }
+  .empty-msg { font-size: 14px; }
+
+  /* Detail panel */
+  .detail { width: 240px; flex-shrink: 0; background: var(--bg2); border-left: 1px solid var(--border); overflow-y: auto; padding: 12px; display: none; font-size: 12px; }
+  .detail.open { display: block; }
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .detail-title { font-weight: 600; font-size: 13px; line-height: 1.3; }
+  .detail-sub { color: var(--text2); font-size: 11px; margin-top: 2px; }
+  .detail-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 0; line-height: 1; }
+  .detail-del:hover { color: var(--red); }
+  .detail-section { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin: 10px 0 5px; }
+  .detail-text { font-size: 11px; color: var(--text2); line-height: 1.6; }
+  .chip { display: inline-block; background: var(--bg3); border-radius: 4px; padding: 2px 6px; font-size: 10px; color: var(--text2); margin: 2px; }
+  .rel-pill { display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 5px; background: var(--bg); border: 1px solid var(--border); margin-bottom: 4px; cursor: pointer; font-size: 11px; transition: border-color .1s; }
+  .rel-pill:hover { border-color: var(--border2); }
+  .rel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .rel-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text2); }
+  .conf-high { color: #4ade80; } .conf-med { color: #fbbf24; } .conf-low { color: #fb923c; }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 20px; width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .modal h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .modal-close { float: right; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; line-height: 1; margin-top: -2px; }
+  .modal-close:hover { color: var(--text); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px 9px; font-size: 12px; color: var(--text); outline: none; font-family: inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); }
+  .field input[type="file"] { padding: 4px; }
+  .field-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .modal-footer { display: flex; gap: 8px; margin-top: 14px; }
+  .modal-footer button { flex: 1; padding: 8px; font-size: 12px; }
+
+  /* API key prompt */
+  .api-banner { background: #1e3a5f; border: 1px solid #2563eb; border-radius: 8px; padding: 10px 12px; font-size: 11px; color: #93c5fd; margin-bottom: 12px; display: none; }
+  .api-banner a { color: #60a5fa; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <span class="topbar-logo">Legal Document Graph <span>/ New City Properties</span></span>
+    <select class="deal-select" id="dealSelect" onchange="switchDeal(this.value)">
+      <option value="">— select deal —</option>
+    </select>
+    <button class="btn" onclick="openModal('newDeal')">+ Deal</button>
+    <button class="btn btn-blue" id="addDocBtn" onclick="openModal('addDoc')" style="display:none">+ Document</button>
+    <button class="btn btn-purple" id="analyzeBtn" onclick="runAnalyze()" style="display:none">🔍 Analyze All</button>
+    <span class="status" id="status"></span>
+  </div>
+  <div class="body">
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Documents</div>
+        <div id="docList" style="max-height:280px;overflow-y:auto"></div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="legend-wrap">
+        <div class="sidebar-label">Edge Types</div>
+        <div id="legend"></div>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <svg id="graph" onclick="clearSel()"></svg>
+      <div class="empty-state has-btn" id="emptyState">
+        <div class="empty-icon">⚖</div>
+        <div class="empty-msg">Create a deal to get started</div>
+        <button class="btn btn-blue" onclick="openModal('newDeal')">+ New Deal</button>
+      </div>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+</div>
+
+<!-- API Key Modal -->
+<div class="overlay" id="apiKeyModal" style="display:none">
+  <div class="modal">
+    <h3>Anthropic API Key Required <button class="modal-close" onclick="document.getElementById('apiKeyModal').style.display='none'">×</button></h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">This tool uses Claude to extract document relationships. Enter your API key to get started. It's stored locally in your browser only.</p>
+    <div class="field">
+      <label>API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." />
+    </div>
+    <p style="font-size:11px;color:var(--text3)">Get your key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue)">console.anthropic.com</a></p>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('apiKeyModal').style.display='none'">Cancel</button>
+      <button class="btn btn-blue" onclick="saveApiKey()">Save & Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main Modal -->
+<div class="overlay" id="overlay" style="display:none" onclick="maybeClose(event)">
+  <div class="modal" id="modal" onclick="event.stopPropagation()"></div>
+</div>
+
+<script>
+const SK = "ncpLegal_v4";
+const API_KEY_SK = "ncpApiKey";
+
+const REL = [
+  { key: "controls",            label: "Controls",              color: "#ef4444" },
+  { key: "references",          label: "References",            color: "#3b82f6" },
+  { key: "subordinates_to",     label: "Subordinates To",       color: "#f97316" },
+  { key: "defines_terms_for",   label: "Defines Terms For",     color: "#22c55e" },
+  { key: "triggers",            label: "Triggers",              color: "#a855f7" },
+  { key: "conditions_precedent",label: "Conditions Precedent",  color: "#eab308" },
+  { key: "incorporates",        label: "Incorporates By Ref.",  color: "#06b6d4" },
+];
+const RM = Object.fromEntries(REL.map(r => [r.key, r]));
+
+const DOC_COLORS = {
+  "Joint Venture Agreement": "#3b82f6",
+  "Operating Agreement": "#6366f1",
+  "Construction Loan Agreement": "#10b981",
+  "Guaranty": "#f59e0b",
+  "Completion Guaranty": "#f59e0b",
+  "Payment Guaranty": "#f59e0b",
+  "Environmental Indemnity": "#ef4444",
+  "Purchase and Sale Agreement": "#8b5cf6",
+  "Ground Lease": "#14b8a6",
+  "Promissory Note": "#84cc16",
+  "Deed of Trust": "#22c55e",
+  "Loan Agreement": "#059669",
+  "Intercreditor Agreement": "#7c3aed",
+  "Subordination Agreement": "#d97706",
+  "Management Agreement": "#ec4899",
+  "Development Agreement": "#0ea5e9",
+};
+const nc = t => DOC_COLORS[t] ?? "#64748b";
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+let st = { deals: {}, cur: null };
+let sim = null, selId = null, selType = null;
+
+// Storage
+function loadSt() {
+  try { const s = localStorage.getItem(SK); if (s) st = JSON.parse(s); } catch {}
+  render();
+}
+function saveSt() {
+  try { localStorage.setItem(SK, JSON.stringify(st)); } catch {}
+}
+
+// API Key
+function getApiKey() { return localStorage.getItem(API_KEY_SK) || ""; }
+function saveApiKey() {
+  const k = document.getElementById("apiKeyInput").value.trim();
+  if (!k) return;
+  localStorage.setItem(API_KEY_SK, k);
+  document.getElementById("apiKeyModal").style.display = "none";
+  flash("API key saved ✓", true);
+}
+
+// Helpers
+function deal() { return st.cur ? st.deals[st.cur] : null; }
+function docs() { return deal() ? Object.values(deal().docs ?? {}) : []; }
+function edges() { return deal()?.edges ?? []; }
+
+function flash(msg, ok) {
+  const el = document.getElementById("status");
+  el.innerHTML = msg;
+  el.style.color = ok === false ? "#ef4444" : ok === true ? "#4ade80" : "#94a3b8";
+}
+
+// Render
+function render() {
+  renderDealSelect();
+  renderDocList();
+  renderLegend();
+  renderGraph();
+  const hasDeal = !!deal();
+  const hasDocs = docs().length > 0;
+  document.getElementById("addDocBtn").style.display = hasDeal ? "" : "none";
+  document.getElementById("analyzeBtn").style.display = (hasDeal && docs().length >= 2) ? "" : "none";
+  document.getElementById("emptyState").style.display = hasDocs ? "none" : "flex";
+  saveSt();
+}
+
+function renderDealSelect() {
+  const sel = document.getElementById("dealSelect");
+  const deals = Object.values(st.deals);
+  sel.innerHTML = '<option value="">— select deal —</option>' +
+    deals.map(d => `<option value="${d.id}"${d.id === st.cur ? " selected" : ""}>${esc(d.name)}</option>`).join("");
+}
+
+function switchDeal(id) {
+  st.cur = id || null; selId = null; selType = null;
+  document.getElementById("detail").classList.remove("open");
+  render();
+}
+
+function renderDocList() {
+  const dl = document.getElementById("docList");
+  const dd = docs();
+  if (!dd.length) { dl.innerHTML = '<div style="font-size:11px;color:#475569;font-style:italic;padding:4px 0">No documents yet</div>'; return; }
+  dl.innerHTML = dd.map(d =>
+    `<div class="doc-item${selId === d.id && selType === "doc" ? " active" : ""}" onclick="selectNode('${d.id}');event.stopPropagation()">
+      <span class="doc-dot" style="background:${nc(d.type)}"></span>
+      <span class="doc-name">${esc(d.name)}</span>
+    </div>`).join("");
+}
+
+function renderLegend() {
+  document.getElementById("legend").innerHTML = REL.map(r =>
+    `<div class="legend-row"><div class="legend-line" style="background:${r.color}"></div><span class="legend-label">${r.label}</span></div>`
+  ).join("");
+}
+
+function renderGraph() {
+  if (sim) sim.stop();
+  const svg = document.getElementById("graph");
+  svg.innerHTML = "";
+  const dd = docs(); if (!dd.length) return;
+  const ed = edges();
+  const W = svg.clientWidth || 700, H = svg.clientHeight || 500;
+  const s = d3.select(svg);
+  const defs = s.append("defs");
+  REL.forEach(r => {
+    defs.append("marker").attr("id", "m-" + r.key)
+      .attr("viewBox", "0 -4 8 8").attr("refX", 6).attr("refY", 0)
+      .attr("markerWidth", 5).attr("markerHeight", 5).attr("orient", "auto")
+      .append("path").attr("d", "M0,-4L8,0L0,4").attr("fill", r.color);
+  });
+  const g = s.append("g");
+  s.call(d3.zoom().scaleExtent([.1, 4]).on("zoom", e => g.attr("transform", e.transform)));
+  const nodes = dd.map(d => ({ ...d }));
+  const nIdx = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const links = ed.map(e => ({ ...e })).filter(e => nIdx[e.source] && nIdx[e.target]);
+
+  sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(180).strength(.4))
+    .force("charge", d3.forceManyBody().strength(-450))
+    .force("center", d3.forceCenter(W / 2, H / 2))
+    .force("collide", d3.forceCollide(52));
+
+  const link = g.append("g").selectAll("line").data(links).join("line")
+    .attr("stroke", d => RM[d.type]?.color ?? "#64748b")
+    .attr("stroke-width", 1.5).attr("opacity", .7)
+    .attr("marker-end", d => "url(#m-" + d.type + ")")
+    .style("cursor", "pointer")
+    .on("click", (ev, d) => { ev.stopPropagation(); selectEdge(d.id); });
+
+  const elbl = g.append("g").attr("pointer-events", "none").selectAll("text").data(links).join("text")
+    .attr("font-size", 9).attr("text-anchor", "middle")
+    .attr("fill", d => RM[d.type]?.color ?? "#94a3b8").attr("opacity", .8)
+    .text(d => RM[d.type]?.label ?? d.type);
+
+  const nodeG = g.append("g").selectAll("g").data(nodes).join("g")
+    .attr("cursor", "pointer")
+    .call(d3.drag()
+      .on("start", (ev, d) => { if (!ev.active) sim.alphaTarget(.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag", (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+      .on("end", (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+    ).on("click", (ev, d) => { ev.stopPropagation(); selectNode(d.id); });
+
+  nodeG.append("circle").attr("r", 24)
+    .attr("fill", d => nc(d.type))
+    .attr("stroke", d => selId === d.id && selType === "doc" ? "#fff" : "rgba(255,255,255,.2)")
+    .attr("stroke-width", d => selId === d.id && selType === "doc" ? 2.5 : 1.5);
+
+  nodeG.append("text")
+    .attr("text-anchor", "middle").attr("dy", 38)
+    .attr("font-size", 10).attr("fill", "#cbd5e1").attr("font-weight", "500")
+    .text(d => d.name.length > 17 ? d.name.slice(0, 15) + "…" : d.name);
+
+  sim.on("tick", () => {
+    const R = 28;
+    link
+      .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => { const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y, l = Math.hypot(dx, dy) || 1; return d.target.x - dx / l * R; })
+      .attr("y2", d => { const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y, l = Math.hypot(dx, dy) || 1; return d.target.y - dy / l * R; });
+    elbl.attr("x", d => (d.source.x + d.target.x) / 2).attr("y", d => (d.source.y + d.target.y) / 2 - 8);
+    nodeG.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+}
+
+// Selection
+function selectNode(id) {
+  selId = id; selType = "doc";
+  renderDocList();
+  const doc = deal().docs[id]; if (!doc) return;
+  const relList = edges().filter(e => e.source === id || e.target === id);
+  const det = document.getElementById("detail");
+  det.innerHTML = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-title">${esc(doc.name)}</div>
+        <div class="detail-sub">${esc(doc.type || "")}</div>
+      </div>
+      <button class="detail-del" onclick="delDoc('${id}')">✕</button>
+    </div>
+    ${doc.summary ? `<div class="detail-text">${esc(doc.summary)}</div>` : ""}
+    ${doc.parties?.length ? `<div class="detail-section">Parties</div><div class="detail-text">${doc.parties.map(esc).join(", ")}</div>` : ""}
+    ${doc.keyDefinedTerms?.length ? `<div class="detail-section">Defined Terms</div><div>${doc.keyDefinedTerms.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>` : ""}
+    ${doc.obligations?.length ? `<div class="detail-section">Key Obligations</div>${doc.obligations.map(o => `<div class="detail-text" style="margin-bottom:3px">• ${esc(o)}</div>`).join("")}` : ""}
+    <div class="detail-section">Relationships (${relList.length})</div>
+    ${relList.map(e => {
+      const isSrc = e.source === id;
+      return `<div class="rel-pill" onclick="selectEdge('${e.id}')">
+        <span class="rel-dot" style="background:${RM[e.type]?.color ?? "#64748b"}"></span>
+        <span class="rel-name">${isSrc ? "→ " : "← "}${esc(isSrc ? e.targetName : e.sourceName)}</span>
+      </div>`;
+    }).join("")}
+    <button class="btn" style="width:100%;margin-top:6px;font-size:11px" onclick="openModal('addEdge','${id}')">+ Add relationship</button>
+  `;
+  det.classList.add("open");
+}
+
+function selectEdge(id) {
+  selId = id; selType = "edge";
+  const e = edges().find(x => x.id === id); if (!e) return;
+  const det = document.getElementById("detail");
+  det.innerHTML = `
+    <div class="detail-header">
+      <div style="color:${RM[e.type]?.color ?? "#94a3b8"};font-weight:600;font-size:13px">${RM[e.type]?.label ?? e.type}</div>
+      <button class="detail-del" onclick="delEdge('${id}')">✕</button>
+    </div>
+    <div style="margin:8px 0;font-size:12px"><span style="color:#64748b">From: </span>${esc(e.sourceName)}</div>
+    <div style="margin-bottom:8px;font-size:12px"><span style="color:#64748b">To: </span>${esc(e.targetName)}</div>
+    ${e.description ? `<div class="detail-section">Description</div><div class="detail-text">${esc(e.description)}</div>` : ""}
+    <div style="margin-top:10px;font-size:11px"><span style="color:#64748b">Confidence: </span><span class="${e.confidence === "high" ? "conf-high" : e.confidence === "medium" ? "conf-med" : "conf-low"}">${e.confidence || "—"}</span></div>
+    <div style="font-size:10px;color:#475569;margin-top:4px">${e.auto ? "Auto-extracted by Claude" : "Manual"}</div>
+  `;
+  det.classList.add("open");
+}
+
+function clearSel() {
+  selId = null; selType = null;
+  document.getElementById("detail").classList.remove("open");
+  renderDocList();
+}
+
+function delDoc(id) {
+  if (!deal()) return;
+  delete deal().docs[id];
+  deal().edges = edges().filter(e => e.source !== id && e.target !== id);
+  clearSel(); render();
+}
+
+function delEdge(id) {
+  if (!deal()) return;
+  deal().edges = edges().filter(e => e.id !== id);
+  clearSel(); render();
+}
+
+// Modals
+function openModal(type, extra) {
+  const ov = document.getElementById("overlay");
+  const m = document.getElementById("modal");
+  ov.style.display = "flex";
+
+  if (type === "newDeal") {
+    m.innerHTML = `
+      <h3>New Deal <button class="modal-close" onclick="closeModal()">×</button></h3>
+      <div class="field"><label>Deal Name</label><input id="mi1" placeholder="e.g. Foundry Multifamily" autofocus onkeydown="if(event.key==='Enter')createDeal()"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-blue" onclick="createDeal()">Create</button>
+      </div>`;
+    setTimeout(() => document.getElementById("mi1")?.focus(), 50);
+
+  } else if (type === "addDoc") {
+    if (!getApiKey()) { closeModal(); promptApiKey(); return; }
+    m.innerHTML = `
+      <h3>Add Document <button class="modal-close" onclick="closeModal()">×</button></h3>
+      <div class="field"><label>Document Name</label><input id="mi1" placeholder="e.g. JV Agreement" autofocus></div>
+      <div class="field">
+        <label>Upload PDF (strongly recommended)</label>
+        <input type="file" id="mi2" accept=".pdf">
+        <div class="field-hint" id="fileHint">Claude reads the PDF to extract relationships, defined terms, and obligations.</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-blue" onclick="addDoc()">Add & Extract</button>
+      </div>`;
+    document.getElementById("mi2")?.addEventListener("change", e => {
+      const f = e.target.files[0];
+      document.getElementById("fileHint").textContent = f ? `📄 ${f.name}` : "Claude reads the PDF to extract relationships.";
+    });
+    setTimeout(() => document.getElementById("mi1")?.focus(), 50);
+
+  } else if (type === "addEdge") {
+    const dd = docs();
+    const opts = dd.map(d => `<option value="${d.id}"${d.id === extra ? " selected" : ""}>${esc(d.name)}</option>`).join("");
+    m.innerHTML = `
+      <h3>Add Relationship <button class="modal-close" onclick="closeModal()">×</button></h3>
+      <div class="field"><label>From</label><select id="mi1"><option value="">Select…</option>${opts}</select></div>
+      <div class="field"><label>Relationship Type</label><select id="mi2">${REL.map(r => `<option value="${r.key}">${r.label}</option>`).join("")}</select></div>
+      <div class="field"><label>To</label><select id="mi3"><option value="">Select…</option>${opts}</select></div>
+      <div class="field"><label>Description (optional)</label><input id="mi4" placeholder="Brief description of the relationship"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-blue" onclick="addEdgeManual()">Add</button>
+      </div>`;
+
+  } else if (type === "apiKey") {
+    m.innerHTML = `
+      <h3>API Key <button class="modal-close" onclick="closeModal()">×</button></h3>
+      <p style="font-size:12px;color:#94a3b8;margin-bottom:12px">Enter your Anthropic API key. Stored locally in your browser only.</p>
+      <div class="field"><label>API Key</label><input type="password" id="mi1" placeholder="sk-ant-..." value="${getApiKey()}"></div>
+      <p style="font-size:11px;color:#64748b">Get your key at <a href="https://console.anthropic.com" target="_blank" style="color:#60a5fa">console.anthropic.com</a></p>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-blue" onclick="saveApiKeyFromModal()">Save</button>
+      </div>`;
+    setTimeout(() => document.getElementById("mi1")?.focus(), 50);
+  }
+}
+
+function saveApiKeyFromModal() {
+  const k = document.getElementById("mi1")?.value?.trim();
+  if (!k) return;
+  localStorage.setItem(API_KEY_SK, k);
+  closeModal();
+  flash("API key saved ✓", true);
+}
+
+function promptApiKey() {
+  openModal("apiKey");
+}
+
+function closeModal() { document.getElementById("overlay").style.display = "none"; }
+function maybeClose(e) { if (e.target === document.getElementById("overlay")) closeModal(); }
+
+// Deal management
+function createDeal() {
+  const name = document.getElementById("mi1")?.value?.trim();
+  if (!name) return;
+  const id = uid();
+  st.deals[id] = { id, name, docs: {}, edges: [] };
+  st.cur = id;
+  closeModal(); render();
+}
+
+// Claude API
+async function callClaude(messages, system) {
+  const key = getApiKey();
+  if (!key) { promptApiKey(); throw new Error("No API key set"); }
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      system: system || "You are a real estate legal document analyst. Return ONLY valid JSON — no markdown, no backticks, no preamble.",
+      messages
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.[0]?.text ?? "";
+}
+
+// Add document
+async function addDoc() {
+  const nameEl = document.getElementById("mi1");
+  const fileEl = document.getElementById("mi2");
+  const name = nameEl?.value?.trim();
+  const file = fileEl?.files?.[0];
+  if (!name && !file) return;
+  closeModal();
+  flash('<span class="spinner"></span>Reading document…');
+
+  try {
+    const existNames = docs().map(d => d.name).join(", ");
+    const prompt = `Analyze this real estate legal document and return JSON:
+{
+  "documentType": "specific type e.g. Joint Venture Agreement",
+  "parties": ["Party A", "Party B"],
+  "keyDefinedTerms": ["up to 10 key defined terms"],
+  "obligations": ["2-4 key obligations"],
+  "summary": "2-3 sentence summary of core purpose and key provisions",
+  "referencedDocuments": [
+    {
+      "inferredName": "document name as cited in this doc",
+      "relationshipType": "controls|references|subordinates_to|defines_terms_for|triggers|conditions_precedent|incorporates",
+      "description": "how these documents relate",
+      "confidence": "high|medium|low"
+    }
+  ]
+}
+
+Relationship types:
+- controls: this document governs or takes precedence over the other
+- references: this document cites or mentions the other
+- subordinates_to: this document is contractually subordinate to the other
+- defines_terms_for: definitions born in this document flow into and are used by the other
+- triggers: conditions or events in this document activate obligations in the other
+- conditions_precedent: this document must be satisfied/delivered before the other becomes effective
+- incorporates: this document pulls in provisions by reference from the other
+
+${existNames ? "Existing documents in this deal: " + existNames + ". Match names exactly when referencing them." : "No other documents in this deal yet."}`;
+
+    let messages;
+    if (file) {
+      const b64 = await new Promise((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result.split(",")[1]);
+        fr.onerror = rej;
+        fr.readAsDataURL(file);
+      });
+      messages = [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }, { type: "text", text: prompt }] }];
+    } else {
+      messages = [{ role: "user", content: `Document name: "${name}"\n\n${prompt}\n\nNo PDF provided — infer from document name only. Mark all confidence as low.` }];
+    }
+
+    flash('<span class="spinner"></span>Extracting with Claude…');
+    const raw = await callClaude(messages);
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+
+    const docId = uid();
+    const newDoc = {
+      id: docId,
+      name: name || file?.name?.replace(/\.pdf$/i, ""),
+      type: parsed.documentType,
+      parties: parsed.parties ?? [],
+      keyDefinedTerms: parsed.keyDefinedTerms ?? [],
+      obligations: parsed.obligations ?? [],
+      summary: parsed.summary ?? "",
+      addedAt: new Date().toISOString()
+    };
+    deal().docs[docId] = newDoc;
+
+    const newEdges = [];
+    for (const ref of parsed.referencedDocuments ?? []) {
+      const refWords = ref.inferredName.toLowerCase().split(" ").slice(0, 2).join(" ");
+      const match = docs().find(d =>
+        d.id !== docId && (
+          d.name.toLowerCase().includes(refWords) ||
+          ref.inferredName.toLowerCase().includes(d.name.toLowerCase().split(" ").slice(0, 2).join(" "))
+        )
+      );
+      if (match) {
+        const srcFirst = ["controls", "defines_terms_for", "triggers", "incorporates"].includes(ref.relationshipType);
+        newEdges.push({
+          id: uid(),
+          source: srcFirst ? docId : match.id,
+          target: srcFirst ? match.id : docId,
+          sourceName: srcFirst ? newDoc.name : match.name,
+          targetName: srcFirst ? match.name : newDoc.name,
+          type: ref.relationshipType,
+          description: ref.description,
+          confidence: ref.confidence,
+          auto: true
+        });
+      }
+    }
+    deal().edges = [...deal().edges, ...newEdges];
+    flash(`✓ "${newDoc.name}" added — ${newEdges.length} relationship${newEdges.length !== 1 ? "s" : ""} mapped`, true);
+    selectNode(docId);
+    render();
+  } catch (e) {
+    flash("Error: " + e.message, false);
+  }
+}
+
+function addEdgeManual() {
+  const src = document.getElementById("mi1")?.value;
+  const type = document.getElementById("mi2")?.value;
+  const tgt = document.getElementById("mi3")?.value;
+  const desc = document.getElementById("mi4")?.value?.trim();
+  if (!src || !tgt || src === tgt) return;
+  const s = docs().find(d => d.id === src), t = docs().find(d => d.id === tgt);
+  if (!s || !t) return;
+  deal().edges.push({ id: uid(), source: src, target: tgt, sourceName: s.name, targetName: t.name, type, description: desc, confidence: "high", auto: false });
+  closeModal(); render();
+}
+
+// Analyze All
+async function runAnalyze() {
+  if (docs().length < 2) return;
+  if (!getApiKey()) { promptApiKey(); return; }
+  flash('<span class="spinner"></span>Analyzing cross-document relationships…');
+  try {
+    const docList = docs().map(d => `- ${d.name} (${d.type}): ${d.summary}`).join("\n");
+    const existing = edges().map(e => `${e.sourceName} → ${e.targetName}: ${e.type}`).join("\n") || "None";
+    const prompt = `Find NEW cross-document relationships not already captured for this real estate deal.
+
+Documents:
+${docList}
+
+Already mapped:
+${existing}
+
+Return JSON:
+{"relationships":[{"sourceDoc":"exact doc name","targetDoc":"exact doc name","type":"controls|references|subordinates_to|defines_terms_for|triggers|conditions_precedent|incorporates","description":"specific legal basis for this relationship","confidence":"high|medium|low"}]}
+
+Focus on:
+- Cross-default provisions (default in one triggers default in another)
+- Defined term chains (terms born in one doc used in another)
+- Guaranty coverage scope (what obligations are guaranteed)
+- Subordination hierarchy (lien priority, payment priority)
+- Conditions precedent chains (delivery sequences at closing)
+- Incorporated-by-reference provisions
+- Approval rights and consent requirements that flow between docs
+
+Return only NEW relationships not already in the mapped list above.`;
+
+    const raw = await callClaude([{ role: "user", content: prompt }]);
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    let added = 0;
+    for (const rel of parsed.relationships ?? []) {
+      const find = name => docs().find(d =>
+        d.name.toLowerCase() === rel[name].toLowerCase() ||
+        d.name.toLowerCase().includes(rel[name].toLowerCase().split(" ").slice(0, 2).join(" ")) ||
+        rel[name].toLowerCase().includes(d.name.toLowerCase().split(" ").slice(0, 2).join(" "))
+      );
+      const src = find("sourceDoc"), tgt = find("targetDoc");
+      if (src && tgt && src.id !== tgt.id) {
+        const dup = edges().some(e => e.source === src.id && e.target === tgt.id && e.type === rel.type);
+        if (!dup) {
+          deal().edges.push({ id: uid(), source: src.id, target: tgt.id, sourceName: src.name, targetName: tgt.name, type: rel.type, description: rel.description, confidence: rel.confidence, auto: true });
+          added++;
+        }
+      }
+    }
+    flash(`✓ ${added} new relationship${added !== 1 ? "s" : ""} found and mapped`, true);
+    render();
+  } catch (e) {
+    flash("Error: " + e.message, false);
+  }
+}
+
+function esc(s) {
+  if (!s) return "";
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Add API key button to topbar
+window.addEventListener("DOMContentLoaded", () => {
+  const tb = document.querySelector(".topbar");
+  const keyBtn = document.createElement("button");
+  keyBtn.className = "btn";
+  keyBtn.textContent = "API Key";
+  keyBtn.style.marginLeft = "auto";
+  keyBtn.onclick = () => openModal("apiKey");
+  tb.appendChild(keyBtn);
+  loadSt();
+});
+</script>
+</body>
+</html>
