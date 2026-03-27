@@ -1231,6 +1231,665 @@
                 console.log(`--- GraphRenderer tests complete: ${results.pass} passed, ${results.fail} failed ---`);
             })();
         }
+
+        // ============================================================
+        // Section 04: DetailPanel
+        // ============================================================
+        class DetailPanel {
+            constructor(panelElementId, adapter) {
+                this._panel = document.getElementById(panelElementId);
+                this._content = document.getElementById('detail-panel-content');
+                this._adapter = adapter;
+                this._closeBtn = this._panel.querySelector('.detail-panel-close');
+                this._onTermClick = null;
+
+                this._closeBtn.addEventListener('click', () => this.hide());
+            }
+
+            _renderText(tag, text, className) {
+                const el = document.createElement(tag);
+                el.textContent = text;
+                if (className) el.className = className;
+                return el;
+            }
+
+            _renderBadge(text, className) {
+                const span = document.createElement('span');
+                span.textContent = text;
+                span.className = `badge ${className}`;
+                return span;
+            }
+
+            showDocumentDetail(docId) {
+                const doc = this._adapter.getDocumentDetails(docId);
+                if (!doc) return;
+
+                this._content.innerHTML = '';
+                this._content.appendChild(this._renderText('h3', doc.name, 'text-doc-name'));
+
+                const badges = document.createElement('div');
+                badges.style.cssText = 'display:flex;gap:6px;margin:8px 0';
+                badges.appendChild(this._renderBadge(doc.document_type, 'badge-info'));
+                badges.appendChild(this._renderBadge(doc.status, doc.status === 'executed' ? 'badge-info' : 'badge-warning'));
+                this._content.appendChild(badges);
+
+                if (doc.summary) {
+                    this._content.appendChild(this._renderText('p', doc.summary, 'text-body'));
+                }
+
+                // Parties
+                if (doc.parties && doc.parties.length) {
+                    this._content.appendChild(this._renderText('h4', 'Parties', 'text-section-header'));
+                    const ul = document.createElement('ul');
+                    for (const p of doc.parties) {
+                        const li = document.createElement('li');
+                        li.textContent = `${p.party_id} (${p.role_in_document})`;
+                        ul.appendChild(li);
+                    }
+                    this._content.appendChild(ul);
+                }
+
+                // Key Provisions
+                if (doc.key_provisions && doc.key_provisions.length) {
+                    this._content.appendChild(this._renderText('h4', 'Key Provisions', 'text-section-header'));
+                    for (const prov of doc.key_provisions) {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '4px';
+                        div.textContent = `${prov.section_reference}: ${prov.summary}`;
+                        this._content.appendChild(div);
+                    }
+                }
+
+                // Findings
+                const findings = this._adapter.getFindingsForEntity('document', docId);
+                if (findings.length) {
+                    this._content.appendChild(this._renderText('h4', `Findings (${findings.length})`, 'text-section-header'));
+                    for (const f of findings) {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'margin-bottom:6px;padding:4px;border-left:3px solid var(--border-color)';
+                        div.appendChild(this._renderBadge(f.severity, `badge-${f.severity.toLowerCase()}`));
+                        const title = document.createElement('span');
+                        title.textContent = ` ${f.title}`;
+                        div.appendChild(title);
+                        this._content.appendChild(div);
+                    }
+                }
+
+                this._panel.classList.add('active');
+                if (graphRenderer.cy) graphRenderer.highlightNode(docId);
+            }
+
+            showRelationshipDetail(edgeData) {
+                this._content.innerHTML = '';
+                this._content.appendChild(this._renderText('h3', edgeData.relType, 'text-doc-name'));
+
+                const info = document.createElement('div');
+                info.className = 'text-body';
+                info.textContent = `${edgeData.source} → ${edgeData.target}`;
+                this._content.appendChild(info);
+
+                if (edgeData.description) {
+                    this._content.appendChild(this._renderText('p', edgeData.description, 'text-body'));
+                }
+
+                this._content.appendChild(this._renderBadge(edgeData.confidence, 'badge-info'));
+
+                if (edgeData.evidence && edgeData.evidence.quote) {
+                    this._content.appendChild(this._renderText('h4', 'Evidence', 'text-section-header'));
+                    const quote = document.createElement('blockquote');
+                    quote.textContent = edgeData.evidence.quote;
+                    quote.style.cssText = 'font-style:italic;border-left:3px solid var(--border-color);padding-left:8px;margin:8px 0';
+                    this._content.appendChild(quote);
+                }
+
+                this._panel.classList.add('active');
+            }
+
+            showTermFlow(termId) {
+                const flow = this._adapter.getDefinedTermFlow(termId);
+                if (!flow) return;
+
+                this._content.innerHTML = '';
+                this._content.appendChild(this._renderText('h3', 'Term Flow', 'text-doc-name'));
+                this._content.appendChild(this._renderText('p', `Defined in: ${flow.definingDoc}`, 'text-body'));
+
+                if (flow.usingDocs.length) {
+                    this._content.appendChild(this._renderText('h4', 'Used in:', 'text-section-header'));
+                    const ul = document.createElement('ul');
+                    for (const docId of flow.usingDocs) {
+                        const li = document.createElement('li');
+                        li.textContent = docId;
+                        li.style.cursor = 'pointer';
+                        li.style.color = 'var(--cat-primary)';
+                        li.addEventListener('click', () => this.showDocumentDetail(docId));
+                        ul.appendChild(li);
+                    }
+                    this._content.appendChild(ul);
+                }
+
+                this._panel.classList.add('active');
+            }
+
+            hide() {
+                this._panel.classList.remove('active');
+                graphRenderer.clearHighlight();
+                AppState.selectedEntity = null;
+            }
+        }
+
+        const detailPanel = new DetailPanel('detail-panel', dataAdapter);
+
+        // Wire Cytoscape events
+        if (graphRenderer.cy) {
+            graphRenderer.cy.on('tap', 'node', function(evt) {
+                detailPanel.showDocumentDetail(evt.target.id());
+            });
+            graphRenderer.cy.on('tap', 'edge', function(evt) {
+                detailPanel.showRelationshipDetail(evt.target.data());
+            });
+            graphRenderer.cy.on('tap', function(evt) {
+                if (evt.target === graphRenderer.cy) {
+                    detailPanel.hide();
+                }
+            });
+        }
+
+        // ============================================================
+        // Section 05: FilterManager + Layout Switching
+        // ============================================================
+        class FilterManager {
+            constructor(adapter, renderer) {
+                this._adapter = adapter;
+                this._renderer = renderer;
+                this._searchTimeout = null;
+            }
+
+            init() {
+                // Layout switcher
+                const layoutSelect = document.getElementById('layout-switcher');
+                if (layoutSelect) {
+                    layoutSelect.addEventListener('change', (e) => {
+                        this._renderer.applyLayout(e.target.value);
+                    });
+                }
+
+                // Search box
+                const searchBox = document.getElementById('search-box');
+                if (searchBox) {
+                    searchBox.addEventListener('input', (e) => {
+                        clearTimeout(this._searchTimeout);
+                        this._searchTimeout = setTimeout(() => {
+                            this._onSearchInput(e.target.value);
+                        }, 200);
+                    });
+                }
+
+                // Filter trigger (toggle filter panel)
+                const filterBtn = document.getElementById('filter-trigger');
+                const filterPanel = document.getElementById('filter-panel');
+                if (filterBtn && filterPanel) {
+                    filterBtn.addEventListener('click', () => {
+                        filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
+                    });
+                    this._buildFilterPanel(filterPanel);
+                }
+
+                // Reset view
+                const resetBtn = document.getElementById('btn-reset-view');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', () => this.resetAll());
+                }
+            }
+
+            _buildFilterPanel(panel) {
+                panel.innerHTML = '';
+                // Relationship type checkboxes
+                const relTypes = this._adapter.getRelationshipTypes();
+                if (relTypes.length) {
+                    const h4 = document.createElement('h4');
+                    h4.textContent = 'Relationship Types';
+                    h4.className = 'text-section-header';
+                    panel.appendChild(h4);
+                    for (const rt of relTypes) {
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display:block;margin:4px 0;cursor:pointer';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.checked = true;
+                        cb.dataset.relType = rt;
+                        cb.addEventListener('change', () => this._applyFilters());
+                        label.appendChild(cb);
+                        label.appendChild(document.createTextNode(` ${rt}`));
+                        panel.appendChild(label);
+                    }
+                }
+
+                // Document type checkboxes
+                const docTypes = this._adapter.getDocumentTypes();
+                if (docTypes.length) {
+                    const h4 = document.createElement('h4');
+                    h4.textContent = 'Document Types';
+                    h4.className = 'text-section-header';
+                    h4.style.marginTop = '12px';
+                    panel.appendChild(h4);
+                    for (const dt of docTypes) {
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display:block;margin:4px 0;cursor:pointer';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.checked = true;
+                        cb.dataset.docType = dt;
+                        cb.addEventListener('change', () => this._applyFilters());
+                        label.appendChild(cb);
+                        label.appendChild(document.createTextNode(` ${dt}`));
+                        panel.appendChild(label);
+                    }
+                }
+
+                // Reset filters button
+                const resetBtn = document.createElement('button');
+                resetBtn.textContent = 'Reset Filters';
+                resetBtn.style.marginTop = '12px';
+                resetBtn.addEventListener('click', () => this.resetAll());
+                panel.appendChild(resetBtn);
+            }
+
+            _applyFilters() {
+                if (!this._renderer.cy) return;
+                const cy = this._renderer.cy;
+
+                // Relationship type filter
+                const activeRelTypes = new Set();
+                document.querySelectorAll('[data-rel-type]').forEach(cb => {
+                    if (cb.checked) activeRelTypes.add(cb.dataset.relType);
+                });
+                cy.edges().forEach(e => {
+                    e.toggleClass('filtered-out', !activeRelTypes.has(e.data('relType')));
+                });
+
+                // Document type filter
+                const activeDocTypes = new Set();
+                document.querySelectorAll('[data-doc-type]').forEach(cb => {
+                    if (cb.checked) activeDocTypes.add(cb.dataset.docType);
+                });
+                cy.nodes().forEach(n => {
+                    const hidden = !activeDocTypes.has(n.data('docType'));
+                    n.toggleClass('filtered-out', hidden);
+                    if (hidden) n.connectedEdges().addClass('filtered-out');
+                });
+            }
+
+            _onSearchInput(query) {
+                if (!this._renderer.cy) return;
+                AppState.searchQuery = query;
+                const cy = this._renderer.cy;
+                const lowerQuery = query.toLowerCase().trim();
+
+                if (!lowerQuery) {
+                    cy.nodes().removeClass('search-dimmed');
+                    return;
+                }
+
+                cy.nodes().forEach(n => {
+                    const name = (n.data('label') || '').toLowerCase();
+                    n.toggleClass('search-dimmed', !name.includes(lowerQuery));
+                });
+            }
+
+            resetAll() {
+                // Reset checkboxes
+                document.querySelectorAll('[data-rel-type], [data-doc-type]').forEach(cb => cb.checked = true);
+                // Reset search
+                const searchBox = document.getElementById('search-box');
+                if (searchBox) searchBox.value = '';
+                AppState.searchQuery = '';
+                // Clear visual state
+                if (this._renderer.cy) {
+                    this._renderer.cy.elements().removeClass('filtered-out search-dimmed');
+                    this._renderer.clearHighlight();
+                    this._renderer.fitToScreen();
+                    this._renderer.applyLayout(AppState.layout);
+                }
+            }
+        }
+
+        const filterManager = new FilterManager(dataAdapter, graphRenderer);
+        filterManager.init();
+
+        // Add filtered-out style to Cytoscape
+        if (graphRenderer.cy) {
+            graphRenderer.cy.style().selector('.filtered-out').style({ 'display': 'none' }).update();
+        }
+
+        // ============================================================
+        // Section 06: AnalysisOverlay
+        // ============================================================
+        class AnalysisOverlay {
+            constructor(renderer, adapter) {
+                this._renderer = renderer;
+                this._adapter = adapter;
+                this._enabled = false;
+            }
+
+            enable() {
+                if (!this._renderer.cy) return;
+                this._enabled = true;
+                AppState.overlayEnabled = true;
+
+                const cy = this._renderer.cy;
+                cy.nodes().forEach(n => {
+                    const findings = this._adapter.getFindingsForEntity('document', n.id());
+                    if (!findings.length) return;
+
+                    // Find highest severity
+                    const sevOrder = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
+                    let highest = 'INFO';
+                    for (const f of findings) {
+                        if (sevOrder.indexOf(f.severity) < sevOrder.indexOf(highest)) {
+                            highest = f.severity;
+                        }
+                    }
+                    n.addClass(`finding-${highest.toLowerCase()}`);
+                });
+
+                // Update toggle button state
+                const btn = document.getElementById('toggle-issues');
+                if (btn) btn.setAttribute('aria-pressed', 'true');
+            }
+
+            disable() {
+                if (!this._renderer.cy) return;
+                this._enabled = false;
+                AppState.overlayEnabled = false;
+
+                this._renderer.cy.nodes().removeClass('finding-critical finding-error finding-warning finding-info');
+                const btn = document.getElementById('toggle-issues');
+                if (btn) btn.setAttribute('aria-pressed', 'false');
+            }
+
+            highlightFinding(findingId) { /* future: highlight specific finding's entities */ }
+
+            isEnabled() { return this._enabled; }
+        }
+
+        const analysisOverlay = new AnalysisOverlay(graphRenderer, dataAdapter);
+
+        // Add overlay styles to Cytoscape
+        if (graphRenderer.cy) {
+            graphRenderer.cy.style()
+                .selector('.finding-critical').style({ 'border-color': '#dc2626', 'border-width': 5 })
+                .selector('.finding-error').style({ 'border-color': '#d97706', 'border-width': 4 })
+                .selector('.finding-warning').style({ 'border-color': '#2563eb', 'border-width': 4 })
+                .selector('.finding-info').style({ 'border-color': '#6b7280', 'border-width': 3 })
+                .update();
+        }
+
+        // Wire toggle button
+        const toggleIssuesBtn = document.getElementById('toggle-issues');
+        if (toggleIssuesBtn) {
+            toggleIssuesBtn.addEventListener('click', () => {
+                if (analysisOverlay.isEnabled()) {
+                    analysisOverlay.disable();
+                } else {
+                    analysisOverlay.enable();
+                }
+            });
+        }
+
+        // ============================================================
+        // Section 07: TimelineView
+        // ============================================================
+        class TimelineView {
+            constructor(containerId, adapter) {
+                this._container = document.getElementById(containerId);
+                this._adapter = adapter;
+                this._docClickCallback = null;
+            }
+
+            render() {
+                this._container.innerHTML = '';
+                const steps = this._adapter.getExecutionSequence();
+
+                if (!steps.length) {
+                    const msg = document.createElement('p');
+                    msg.textContent = 'Execution sequence analysis not available.';
+                    msg.style.cssText = 'text-align:center;color:var(--text-secondary);padding:40px';
+                    this._container.appendChild(msg);
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.style.cssText = 'width:100%;border-collapse:collapse';
+
+                // Header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                for (const h of ['#', 'Document', 'Category', 'Status', 'Description']) {
+                    const th = document.createElement('th');
+                    th.textContent = h;
+                    th.style.cssText = 'text-align:left;padding:8px 12px;border-bottom:2px solid var(--border-color);font-weight:600';
+                    headerRow.appendChild(th);
+                }
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Body
+                const tbody = document.createElement('tbody');
+                for (const step of steps) {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border-color)';
+
+                    const tdOrd = document.createElement('td');
+                    tdOrd.textContent = step.display_ordinal;
+                    tdOrd.style.padding = '8px 12px';
+                    tr.appendChild(tdOrd);
+
+                    const tdDoc = document.createElement('td');
+                    tdDoc.style.padding = '8px 12px';
+                    const entities = step.affected_entities || [];
+                    const docEntities = entities.filter(e => e.entity_type === 'document');
+                    for (const e of docEntities) {
+                        const link = document.createElement('span');
+                        link.textContent = e.entity_id;
+                        link.style.cssText = 'cursor:pointer;color:var(--cat-primary);text-decoration:underline';
+                        link.addEventListener('click', () => {
+                            if (this._docClickCallback) this._docClickCallback(e.entity_id);
+                        });
+                        tdDoc.appendChild(link);
+                        tdDoc.appendChild(document.createTextNode(' '));
+                    }
+                    tr.appendChild(tdDoc);
+
+                    const tdCat = document.createElement('td');
+                    tdCat.textContent = step.category || '';
+                    tdCat.style.padding = '8px 12px';
+                    tr.appendChild(tdCat);
+
+                    const tdStatus = document.createElement('td');
+                    tdStatus.style.padding = '8px 12px';
+                    const statusBadge = document.createElement('span');
+                    statusBadge.textContent = step.severity || '';
+                    statusBadge.className = `badge badge-${(step.severity || 'info').toLowerCase()}`;
+                    tdStatus.appendChild(statusBadge);
+                    tr.appendChild(tdStatus);
+
+                    const tdDesc = document.createElement('td');
+                    tdDesc.textContent = step.description || '';
+                    tdDesc.style.padding = '8px 12px';
+                    tr.appendChild(tdDesc);
+
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+                this._container.appendChild(table);
+            }
+
+            onDocumentClick(callback) {
+                this._docClickCallback = callback;
+            }
+        }
+
+        const timelineView = new TimelineView('timeline-container', dataAdapter);
+        timelineView.onDocumentClick((docId) => {
+            // Switch back to graph view and highlight
+            document.getElementById('view-switcher').value = 'graph';
+            document.getElementById('graph-container').style.display = '';
+            document.getElementById('timeline-container').style.display = 'none';
+            AppState.activeView = 'graph';
+            detailPanel.showDocumentDetail(docId);
+        });
+
+        // View switcher
+        const viewSwitcher = document.getElementById('view-switcher');
+        if (viewSwitcher) {
+            viewSwitcher.addEventListener('change', (e) => {
+                const view = e.target.value;
+                AppState.activeView = view;
+                if (view === 'timeline') {
+                    document.getElementById('graph-container').style.display = 'none';
+                    document.getElementById('timeline-container').style.display = 'block';
+                    timelineView.render();
+                } else {
+                    document.getElementById('graph-container').style.display = '';
+                    document.getElementById('timeline-container').style.display = 'none';
+                }
+            });
+        }
+
+        // ============================================================
+        // Section 08: PDFExporter
+        // ============================================================
+        class PDFExporter {
+            constructor(adapter, renderer) {
+                this._adapter = adapter;
+                this._renderer = renderer;
+            }
+
+            async generate() {
+                if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+                    console.warn('jsPDF not loaded — PDF export unavailable');
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf || jspdf;
+                const dealName = DEAL_GRAPH.deal ? DEAL_GRAPH.deal.name : 'Deal';
+                const date = new Date().toISOString().split('T')[0];
+
+                // Page 1: Landscape with graph
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+                doc.setFontSize(20);
+                doc.text(dealName, 14, 20);
+                doc.setFontSize(12);
+                doc.text('Document Dependency Analysis', 14, 28);
+                doc.setFontSize(10);
+                doc.text(`Generated: ${date}`, 14, 35);
+
+                // Try graph image
+                if (this._renderer.cy) {
+                    try {
+                        const png = this._renderer.cy.png({ scale: 2, full: true });
+                        doc.addImage(png, 'PNG', 14, 42, 250, 140);
+                    } catch (e) {
+                        doc.text('Graph image unavailable', 14, 50);
+                    }
+                }
+
+                // Page 2+: Document summary table (portrait)
+                doc.addPage('letter', 'portrait');
+                doc.setFontSize(14);
+                doc.text('Document Summary', 14, 20);
+
+                const docs = Object.values(DEAL_GRAPH.documents || {});
+                if (docs.length && typeof doc.autoTable === 'function') {
+                    doc.autoTable({
+                        startY: 25,
+                        head: [['Name', 'Type', 'Status']],
+                        body: docs.map(d => [
+                            (d.name || '').substring(0, 50),
+                            d.document_type || '',
+                            d.status || '',
+                        ]),
+                        styles: { fontSize: 9 },
+                    });
+                }
+
+                // Relationships table
+                const rels = DEAL_GRAPH.relationships || [];
+                if (rels.length && typeof doc.autoTable === 'function') {
+                    doc.addPage('letter', 'portrait');
+                    doc.setFontSize(14);
+                    doc.text('Relationships', 14, 20);
+                    doc.autoTable({
+                        startY: 25,
+                        head: [['Source', 'Target', 'Type', 'Confidence']],
+                        body: rels.map(r => [
+                            r.source_document_id,
+                            r.target_document_id,
+                            r.relationship_type,
+                            r.confidence,
+                        ]),
+                        styles: { fontSize: 9 },
+                    });
+                }
+
+                // Findings report
+                const summary = this._adapter.getFindingsSummary();
+                if (summary.critical + summary.error + summary.warning + summary.info > 0) {
+                    doc.addPage('letter', 'portrait');
+                    doc.setFontSize(14);
+                    doc.text('Analysis Findings', 14, 20);
+                    doc.setFontSize(10);
+                    doc.text(`Critical: ${summary.critical}  Error: ${summary.error}  Warning: ${summary.warning}  Info: ${summary.info}`, 14, 28);
+                }
+
+                // Save
+                doc.save(`${dealName.replace(/[^a-z0-9]/gi, '-')}-analysis-${date}.pdf`);
+            }
+        }
+
+        const pdfExporter = new PDFExporter(dataAdapter, graphRenderer);
+        const exportBtn = document.getElementById('btn-export-pdf');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => pdfExporter.generate());
+        }
+
+        // ============================================================
+        // Section 09: Polish — Error handling, keyboard shortcuts, edge labels
+        // ============================================================
+
+        // CDN load check
+        if (window.__cdnFailed) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px';
+            errDiv.innerHTML = '<h2 style="color:#dc2626">Required libraries could not be loaded</h2>'
+                + '<p>Please check your internet connection and reload.</p>'
+                + '<p style="color:#6b7280">Failed: ' + (window.__cdnFailedLib || []).join(', ') + '</p>';
+            document.body.appendChild(errDiv);
+        }
+
+        // Edge Labels toggle
+        const edgeLabelsBtn = document.getElementById('toggle-edge-labels');
+        if (edgeLabelsBtn && graphRenderer.cy) {
+            edgeLabelsBtn.addEventListener('click', () => {
+                AppState.edgeLabelsVisible = !AppState.edgeLabelsVisible;
+                edgeLabelsBtn.setAttribute('aria-pressed', String(AppState.edgeLabelsVisible));
+                graphRenderer.cy.edges().forEach(e => {
+                    e.style('label', AppState.edgeLabelsVisible ? e.data('relType') : '');
+                });
+            });
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (evt) => {
+            if (evt.target.tagName === 'INPUT' || evt.target.tagName === 'SELECT') return;
+            if (evt.key === 'Escape') {
+                detailPanel.hide();
+            } else if (evt.key === 'f' || evt.key === 'F') {
+                if (graphRenderer.cy) graphRenderer.fitToScreen();
+            } else if (evt.key === 'r' || evt.key === 'R') {
+                filterManager.resetAll();
+            }
+        });
     </script>
 </body>
 </html>
