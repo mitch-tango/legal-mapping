@@ -62,6 +62,7 @@ class Finding(BaseModel):
     confidence: Literal["high", "medium", "low"]
     source: Literal["explicit", "inferred"]
     verified: bool
+    found_in_clusters: list[str] | None = None
 
 
 class AnalysisSummary(BaseModel):
