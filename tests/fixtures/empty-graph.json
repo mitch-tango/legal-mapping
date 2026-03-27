@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "deal": {
+    "name": "New Deal",
+    "deal_type": null,
+    "primary_parties": [],
+    "closing_date": null,
+    "status": "active",
+    "notes": null,
+    "created_at": "2025-01-15T10:00:00Z",
+    "updated_at": "2025-01-15T10:00:00Z"
+  },
+  "parties": {},
+  "documents": {},
+  "relationships": [],
+  "defined_terms": [],
+  "cross_references": [],
+  "conditions_precedent": [],
+  "annotations": [],
+  "extraction_log": []
+}

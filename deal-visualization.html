@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Deal - Document Dependency Analysis</title>
+    <style>
+        /* ============================================================
+           CSS Custom Properties (Color Palette)
+           ============================================================ */
+        :root {
+            /* UI Chrome */
+            --bg-primary: #f8f9fa;
+            --bg-panel: #ffffff;
+            --border-color: #e5e7eb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+
+            /* Severity */
+            --severity-critical: #dc2626;
+            --severity-error: #d97706;
+            --severity-warning: #2563eb;
+            --severity-info: #6b7280;
+
+            /* Document Type Categories */
+            --cat-primary: #3b82f6;
+            --cat-ancillary: #8b5cf6;
+            --cat-financial: #10b981;
+            --cat-corporate: #f59e0b;
+            --cat-real-estate: #ef4444;
+            --cat-regulatory: #6366f1;
+            --cat-closing: #14b8a6;
+
+            /* Edge Type Families */
+            --edge-control: #ef4444;
+            --edge-reference: #3b82f6;
+            --edge-financial: #10b981;
+            --edge-modification: #8b5cf6;
+            --edge-conditional: #f59e0b;
+            --edge-term: #14b8a6;
+        }
+
+        /* ============================================================
+           Base Reset & Typography
+           ============================================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+        }
+
+        /* Typography hierarchy */
+        .text-deal-name { font-size: 20px; font-weight: 700; }
+        .text-section-header { font-size: 16px; font-weight: 600; }
+        .text-doc-name { font-size: 14px; font-weight: 500; }
+        .text-body { font-size: 13px; font-weight: 400; }
+        .text-label { font-size: 11px; }
+
+        /* ============================================================
+           Layout Structure
+           ============================================================ */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-width: 1024px;
+        }
+
+        /* ============================================================
+           Toolbar
+           ============================================================ */
+        .toolbar {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            height: 52px;
+            padding: 0 16px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .toolbar select,
+        .toolbar input,
+        .toolbar button {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-panel);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .toolbar select:hover,
+        .toolbar button:hover {
+            background: var(--bg-primary);
+        }
+
+        .toolbar input[type="text"] {
+            width: 200px;
+            cursor: text;
+        }
+
+        .toolbar input[type="text"]:focus {
+            outline: 2px solid var(--cat-primary);
+            outline-offset: -1px;
+        }
+
+        .toolbar .separator {
+            width: 1px;
+            height: 24px;
+            background: var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .toolbar .toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-panel);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-primary);
+            user-select: none;
+        }
+
+        .toolbar .toggle-btn[aria-pressed="true"] {
+            background: var(--cat-primary);
+            color: white;
+            border-color: var(--cat-primary);
+        }
+
+        .toolbar .btn-action {
+            background: var(--cat-primary);
+            color: white;
+            border: 1px solid var(--cat-primary);
+            font-weight: 500;
+        }
+
+        .toolbar .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        /* ============================================================
+           Main Content
+           ============================================================ */
+        #main-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           Graph Container
+           ============================================================ */
+        .graph-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* ============================================================
+           Timeline Container
+           ============================================================ */
+        .timeline-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--bg-primary);
+            overflow-y: auto;
+            padding: 24px;
+            display: none;
+        }
+
+        /* ============================================================
+           Detail Panel (slide-in sidebar)
+           ============================================================ */
+        .detail-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 400px;
+            height: 100%;
+            background: var(--bg-panel);
+            box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            z-index: 20;
+            padding: 20px;
+        }
+
+        .detail-panel.active {
+            transform: translateX(0);
+        }
+
+        .detail-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .detail-panel-close {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1;
+        }
+
+        .detail-panel-close:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* ============================================================
+           Filter Panel (dropdown, hidden by default)
+           ============================================================ */
+        .filter-panel {
+            display: none;
+            position: absolute;
+            top: 52px;
+            right: 16px;
+            width: 320px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 30;
+            padding: 16px;
+        }
+
+        /* ============================================================
+           Badges
+           ============================================================ */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-critical { background: var(--severity-critical); color: white; }
+        .badge-error { background: var(--severity-error); color: white; }
+        .badge-warning { background: var(--severity-warning); color: white; }
+        .badge-info { background: var(--severity-info); color: white; }
+
+        /* ============================================================
+           Print Stylesheet
+           ============================================================ */
+        @media print {
+            .toolbar, .detail-panel, .filter-panel {
+                display: none !important;
+            }
+            .graph-container {
+                display: none !important;
+            }
+            body::after {
+                content: "For the best report, use the Export PDF button.";
+                display: block;
+                text-align: center;
+                font-size: 18px;
+                padding: 40px;
+                color: var(--text-secondary);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         Data Islands
+         JSON data embedded by Claude Code at generation time.
+         Using <script type="application/json"> prevents XSS from
+         legal text containing angle brackets or script tags.
+         ============================================================ -->
+    <script type="application/json" id="deal-graph-data">{"deal_name": "Sample Deal", "documents": [], "relationships": []}</script>
+    <script type="application/json" id="deal-analysis-data">null</script>
+
+    <!-- ============================================================
+         Layout
+         ============================================================ -->
+    <div id="app">
+        <!-- Toolbar -->
+        <div id="toolbar" class="toolbar">
+            <!-- View Switcher -->
+            <select id="view-switcher" data-role="view-switcher" title="Switch view">
+                <option value="graph" selected>Graph</option>
+                <option value="timeline">Timeline</option>
+            </select>
+
+            <div class="separator"></div>
+
+            <!-- Layout Switcher -->
+            <select id="layout-switcher" data-role="layout-switcher" title="Change layout algorithm">
+                <option value="dagre" selected>Dagre</option>
+                <option value="cola">Force-directed</option>
+                <option value="breadthfirst">Tree</option>
+            </select>
+
+            <div class="separator"></div>
+
+            <!-- Search Box -->
+            <input type="text" id="search-box" data-role="search-box"
+                   placeholder="Search documents..." title="Search documents">
+
+            <div class="separator"></div>
+
+            <!-- Show Issues Toggle -->
+            <button type="button" id="toggle-issues" data-role="toggle-issues"
+                    class="toggle-btn" aria-pressed="false" title="Show analysis issues">
+                Show Issues
+            </button>
+
+            <!-- Edge Labels Toggle -->
+            <button type="button" id="toggle-edge-labels" data-role="toggle-edge-labels"
+                    class="toggle-btn" aria-pressed="false" title="Show edge labels">
+                Edge Labels
+            </button>
+
+            <div class="separator"></div>
+
+            <!-- Filter Button -->
+            <button type="button" id="filter-trigger" data-role="filter-trigger"
+                    title="Filter documents and relationships">
+                Filter
+            </button>
+
+            <!-- Reset View Button -->
+            <button type="button" id="btn-reset-view" data-role="btn-reset-view"
+                    title="Reset zoom, pan, and highlights">
+                Reset View
+            </button>
+
+            <!-- Export PDF Button -->
+            <button type="button" id="btn-export-pdf" data-role="btn-export-pdf"
+                    class="btn-action" title="Export deal analysis as PDF">
+                Export PDF
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <!-- Graph Container (Cytoscape mounts here) -->
+            <div id="graph-container" class="graph-container"></div>
+
+            <!-- Timeline Container (hidden by default) -->
+            <div id="timeline-container" class="timeline-container"></div>
+
+            <!-- Detail Panel (slides in from right) -->
+            <div id="detail-panel" class="detail-panel">
+                <div class="detail-panel-header">
+                    <span class="text-section-header">Details</span>
+                    <button type="button" class="detail-panel-close" aria-label="Close detail panel">&times;</button>
+                </div>
+                <div id="detail-panel-content"></div>
+            </div>
+        </div>
+
+        <!-- Filter Panel (dropdown, hidden by default) -->
+        <div id="filter-panel" class="filter-panel"></div>
+    </div>
+
+    <!-- ============================================================
+         CDN Dependencies
+         Loaded in order. Pinned versions with SRI integrity hashes.
+         Each script has an onerror handler to flag CDN load failures.
+         ============================================================ -->
+    <!-- 1. Cytoscape.js - Core graph library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"
+            integrity="sha512-RcuA+PEnJcg1caTn53YLhZ3bYVFXphzcPL1BjBoAwFiA3bErav+AndZz1xrqpAtv/8Waep2X+9zn8KWpwacUSA=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape')"></script>
+
+    <!-- 2. Dagre - Hierarchical layout algorithm -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"
+            integrity="sha512-psLUZfcgPmi012lcpVHkWoOqyztollwCGu4w/mXijFMK/YcdUdP06voJNVOJ7f/dUIlO2tGlDLuypRyXX2lcvQ=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('dagre')"></script>
+
+    <!-- 3. Cytoscape-dagre - Dagre adapter for Cytoscape -->
+    <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"
+            integrity="sha512-17zwwzytpW8ZMn1Fg2DAtUCSOTmJd1GXWfatjWrUGmmOcBGj+dF/yYKo5mqeiBkyYnbnuXZ3ulvHA4MwIxzHlA=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-dagre')"></script>
+
+    <!-- 4. Cytoscape-cola - Force-directed layout for Cytoscape -->
+    <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"
+            integrity="sha512-rZBTbo9+0shCQcVTphY34s/jVn984eDaKSbCApIAEFbNhg/3AR3CkVYkkDW8XJ9LZhhyv/Hp0THwnP3wjE/3+g=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-cola')"></script>
+
+    <!-- 5. jsPDF - PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('jspdf')"></script>
+
+    <!-- 6. svg2pdf.js - SVG to PDF conversion -->
+    <script src="https://unpkg.com/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"
+            integrity="sha512-FeI4nOAjlplO5ugQ+LsCb4jMxkuFkE4VEwT2hHn0BCVnE5/pcXosTCyGLRfort8gV0nmpqFePnYmd6DFoMQ5NA=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('svg2pdf')"></script>
+
+    <!-- 7. jsPDF-AutoTable - PDF table generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
+            integrity="sha512-2/YdOMV+YNpanLCF5MdQwaoFRVbTmrJ4u4EpqS/USXAQNUDgI5uwYi6J98WVtJKcfe1AbgerygzDFToxAlOGEQ=="
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('jspdf-autotable')"></script>
+
+    <!-- ============================================================
+         Application Code
+         ============================================================ -->
+    <script>
+        const DEBUG = true;
+
+        if (DEBUG) {
+            (function runStructureTests() {
+                const results = { pass: 0, fail: 0 };
+                const assert = (condition, msg) => {
+                    console.assert(condition, `[FAIL] ${msg}`);
+                    if (condition) {
+                        console.log(`[PASS] ${msg}`);
+                        results.pass++;
+                    } else {
+                        results.fail++;
+                    }
+                };
+
+                // --- Toolbar structure ---
+                const toolbar = document.getElementById('toolbar');
+                assert(!!toolbar, 'Toolbar element exists');
+                assert(toolbar && toolbar.classList.contains('toolbar'), 'Toolbar has .toolbar class');
+
+                const toolbarControls = [
+                    'view-switcher',
+                    'layout-switcher',
+                    'search-box',
+                    'toggle-issues',
+                    'toggle-edge-labels',
+                    'filter-trigger',
+                    'btn-reset-view',
+                    'btn-export-pdf'
+                ];
+                toolbarControls.forEach(role => {
+                    const el = document.querySelector(`[data-role="${role}"]`) || document.getElementById(role);
+                    assert(!!el, `Toolbar contains control: ${role}`);
+                    if (el) {
+                        assert(toolbar.contains(el), `${role} is a child of toolbar`);
+                    }
+                });
+
+                // --- Graph container ---
+                const graphContainer = document.getElementById('graph-container');
+                assert(!!graphContainer, 'Graph container element exists');
+                assert(graphContainer && graphContainer.classList.contains('graph-container'), 'Graph container has .graph-container class');
+                if (graphContainer) {
+                    const rect = graphContainer.getBoundingClientRect();
+                    assert(rect.height > 0, 'Graph container has height > 0');
+                    if (toolbar) {
+                        const toolbarRect = toolbar.getBoundingClientRect();
+                        assert(
+                            Math.abs(rect.top - toolbarRect.bottom) < 2,
+                            'Graph container top aligns with toolbar bottom'
+                        );
+                    }
+                }
+
+                // --- Detail panel ---
+                const detailPanel = document.getElementById('detail-panel');
+                assert(!!detailPanel, 'Detail panel element exists');
+                assert(detailPanel && detailPanel.classList.contains('detail-panel'), 'Detail panel has .detail-panel class');
+                if (detailPanel) {
+                    const style = window.getComputedStyle(detailPanel);
+                    const transform = style.transform || style.webkitTransform;
+                    const isHidden = (
+                        style.display === 'none' ||
+                        style.visibility === 'hidden' ||
+                        (transform && transform !== 'none')
+                    );
+                    assert(isHidden, 'Detail panel starts hidden (transformed off-screen)');
+
+                    const hasTransition = style.transition && style.transition.includes('transform');
+                    assert(hasTransition, 'Detail panel has CSS transition on transform');
+                }
+
+                // --- Timeline container ---
+                const timeline = document.getElementById('timeline-container');
+                assert(!!timeline, 'Timeline container element exists');
+                assert(timeline && timeline.classList.contains('timeline-container'), 'Timeline container has .timeline-container class');
+                if (timeline) {
+                    const style = window.getComputedStyle(timeline);
+                    assert(style.display === 'none', 'Timeline container starts hidden (display: none)');
+                }
+
+                // --- CSS class consistency ---
+                assert(!!document.querySelector('.toolbar'), '.toolbar class exists in DOM');
+                assert(!!document.querySelector('.graph-container'), '.graph-container class exists in DOM');
+                assert(!!document.querySelector('.detail-panel'), '.detail-panel class exists in DOM');
+                assert(!!document.querySelector('.timeline-container'), '.timeline-container class exists in DOM');
+
+                // --- Print stylesheet ---
+                const styles = document.querySelectorAll('style');
+                let hasPrintMedia = false;
+                styles.forEach(s => {
+                    if (s.textContent.includes('@media print')) {
+                        hasPrintMedia = true;
+                    }
+                });
+                assert(hasPrintMedia, 'A <style> element contains @media print');
+
+                // --- Minimum width ---
+                const appEl = document.getElementById('app');
+                if (appEl) {
+                    const appStyle = window.getComputedStyle(appEl);
+                    assert(
+                        !appStyle.maxWidth || appStyle.maxWidth === 'none',
+                        'No max-width set on #app layout wrapper'
+                    );
+                }
+
+                // --- Data islands ---
+                const graphData = document.getElementById('deal-graph-data');
+                assert(!!graphData, 'deal-graph-data script element exists');
+                assert(
+                    graphData && graphData.type === 'application/json',
+                    'deal-graph-data has type="application/json"'
+                );
+                if (graphData) {
+                    let parsed = false;
+                    try { JSON.parse(graphData.textContent); parsed = true; } catch (e) {}
+                    assert(parsed, 'deal-graph-data is parseable with JSON.parse()');
+                }
+
+                const analysisData = document.getElementById('deal-analysis-data');
+                assert(!!analysisData, 'deal-analysis-data script element exists');
+                assert(
+                    analysisData && analysisData.type === 'application/json',
+                    'deal-analysis-data has type="application/json"'
+                );
+                if (analysisData) {
+                    let parsed = false;
+                    try { JSON.parse(analysisData.textContent); parsed = true; } catch (e) {}
+                    assert(parsed, 'deal-analysis-data is parseable with JSON.parse()');
+                }
+
+                // --- CDN scripts ---
+                const cdnScripts = document.querySelectorAll('script[src]');
+                assert(cdnScripts.length >= 7, `At least 7 CDN script tags exist (found ${cdnScripts.length})`);
+                cdnScripts.forEach(script => {
+                    const src = script.getAttribute('src');
+                    assert(
+                        script.hasAttribute('crossorigin') && script.getAttribute('crossorigin') === 'anonymous',
+                        `CDN script has crossorigin="anonymous": ${src}`
+                    );
+                    assert(
+                        script.hasAttribute('integrity') && script.getAttribute('integrity').length > 0,
+                        `CDN script has SRI integrity hash: ${src}`
+                    );
+                    assert(
+                        script.hasAttribute('onerror'),
+                        `CDN script has onerror handler: ${src}`
+                    );
+                });
+
+                // --- Summary ---
+                console.log(`--- Structure tests complete: ${results.pass} passed, ${results.fail} failed ---`);
+            })();
+        }
+
+        // ============================================================
+        // Data Parsing
+        // ============================================================
+        const DEAL_GRAPH = JSON.parse(document.getElementById('deal-graph-data').textContent);
+        const DEAL_ANALYSIS = JSON.parse(document.getElementById('deal-analysis-data').textContent);
+
+        // ============================================================
+        // Document Type Category Mapping
+        // ============================================================
+        const DOC_TYPE_CATEGORIES = {
+            'loan_agreement': 'category-primary',
+            'purchase_agreement': 'category-primary',
+            'credit_agreement': 'category-primary',
+            'lease_agreement': 'category-primary',
+            'guaranty': 'category-ancillary',
+            'indemnity_agreement': 'category-ancillary',
+            'estoppel_certificate': 'category-ancillary',
+            'environmental_indemnity': 'category-ancillary',
+            'comfort_letter': 'category-ancillary',
+            'promissory_note': 'category-financial',
+            'deed_of_trust': 'category-financial',
+            'security_agreement': 'category-financial',
+            'assignment': 'category-financial',
+            'operating_agreement': 'category-corporate',
+            'partnership_agreement': 'category-corporate',
+            'articles_of_incorporation': 'category-corporate',
+            'resolution': 'category-corporate',
+            'environmental_report': 'category-regulatory',
+            'title_commitment': 'category-regulatory',
+            'survey': 'category-regulatory',
+            'closing_statement': 'category-closing',
+            'settlement_statement': 'category-closing',
+        };
+        const DEFAULT_CATEGORY = 'category-other';
+
+        // ============================================================
+        // DataAdapter Class
+        // ============================================================
+        class DataAdapter {
+            constructor(dealGraph, dealAnalysis) {
+                this._graph = dealGraph;
+                this._analysis = dealAnalysis;
+
+                // Build document lookup
+                this._docMap = new Map();
+                const docs = dealGraph.documents || {};
+                for (const [id, doc] of Object.entries(docs)) {
+                    this._docMap.set(id, doc);
+                }
+
+                // Build relationship lookup
+                this._relationships = dealGraph.relationships || [];
+
+                // Build term lookup
+                this._termMap = new Map();
+                for (const term of (dealGraph.defined_terms || [])) {
+                    this._termMap.set(term.id, term);
+                }
+
+                // Detect cycles
+                this._cycleEdges = new Set();
+                this._detectCycles();
+
+                // Index findings with orphan pruning
+                this._findingsByEntity = new Map();
+                this._allFindings = [];
+                this._indexFindings();
+            }
+
+            _detectCycles() {
+                const adj = new Map();
+                const edgeMap = new Map(); // "src->tgt" -> [edge IDs]
+                for (const rel of this._relationships) {
+                    const src = rel.source_document_id;
+                    const tgt = rel.target_document_id;
+                    if (!adj.has(src)) adj.set(src, []);
+                    adj.get(src).push(tgt);
+                    const key = `${src}->${tgt}`;
+                    if (!edgeMap.has(key)) edgeMap.set(key, []);
+                    edgeMap.get(key).push(rel.id || key);
+                }
+
+                const UNVISITED = 0, IN_PROGRESS = 1, VISITED = 2;
+                const state = new Map();
+                for (const id of this._docMap.keys()) state.set(id, UNVISITED);
+
+                const path = [];
+                const self = this;
+
+                function dfs(node) {
+                    state.set(node, IN_PROGRESS);
+                    path.push(node);
+                    for (const neighbor of (adj.get(node) || [])) {
+                        if (state.get(neighbor) === IN_PROGRESS) {
+                            // Cycle found — mark all edges in the cycle path
+                            const cycleStart = path.indexOf(neighbor);
+                            for (let i = cycleStart; i < path.length; i++) {
+                                const from = path[i];
+                                const to = i + 1 < path.length ? path[i + 1] : neighbor;
+                                const eKey = `${from}->${to}`;
+                                for (const eid of (edgeMap.get(eKey) || [])) {
+                                    self._cycleEdges.add(eid);
+                                }
+                            }
+                        } else if (state.get(neighbor) === UNVISITED) {
+                            dfs(neighbor);
+                        }
+                    }
+                    path.pop();
+                    state.set(node, VISITED);
+                }
+
+                for (const id of this._docMap.keys()) {
+                    if (state.get(id) === UNVISITED) dfs(id);
+                }
+            }
+
+            _indexFindings() {
+                if (!this._analysis || !this._analysis.analyses) return;
+                const validDocIds = this._docMap;
+                const validRelIds = new Set(this._relationships.map(r => r.id));
+
+                for (const [, result] of Object.entries(this._analysis.analyses)) {
+                    for (const finding of (result.findings || [])) {
+                        let hasValidEntity = false;
+                        for (const entity of (finding.affected_entities || [])) {
+                            const eid = entity.entity_id;
+                            const isValid = validDocIds.has(eid) || validRelIds.has(eid);
+                            if (isValid) {
+                                hasValidEntity = true;
+                                if (!this._findingsByEntity.has(eid)) {
+                                    this._findingsByEntity.set(eid, []);
+                                }
+                                this._findingsByEntity.get(eid).push(finding);
+                            }
+                        }
+                        if (hasValidEntity) {
+                            this._allFindings.push(finding);
+                        }
+                    }
+                }
+            }
+
+            getCytoscapeElements() {
+                const nodes = [];
+                const edges = [];
+
+                // Count relationships per document
+                const relCount = new Map();
+                for (const rel of this._relationships) {
+                    relCount.set(rel.source_document_id, (relCount.get(rel.source_document_id) || 0) + 1);
+                    relCount.set(rel.target_document_id, (relCount.get(rel.target_document_id) || 0) + 1);
+                }
+
+                // Build nodes
+                for (const [id, doc] of this._docMap) {
+                    const category = DOC_TYPE_CATEGORIES[doc.document_type] || DEFAULT_CATEGORY;
+                    nodes.push({
+                        data: {
+                            id: id,
+                            label: doc.name,
+                            docType: doc.document_type,
+                            status: doc.status,
+                            relationshipCount: relCount.get(id) || 0,
+                        },
+                        classes: category,
+                    });
+                }
+
+                // Build edges with deterministic IDs
+                const edgeCounters = new Map();
+                for (const rel of this._relationships) {
+                    const baseKey = `${rel.source_document_id}::${rel.relationship_type}::${rel.target_document_id}`;
+                    const idx = edgeCounters.get(baseKey) || 0;
+                    edgeCounters.set(baseKey, idx + 1);
+                    const edgeId = `${baseKey}::${idx}`;
+
+                    const isCycle = this._cycleEdges.has(rel.id);
+                    let classes = `${rel.relationship_type} ${rel.confidence}`;
+                    if (isCycle) classes += ' cycle';
+
+                    edges.push({
+                        data: {
+                            id: edgeId,
+                            source: rel.source_document_id,
+                            target: rel.target_document_id,
+                            relType: rel.relationship_type,
+                            confidence: rel.confidence,
+                            description: rel.description,
+                            evidence: rel.evidence,
+                        },
+                        classes: classes,
+                    });
+                }
+
+                return { nodes, edges };
+            }
+
+            getDocumentDetails(docId) {
+                return this._docMap.get(docId) || null;
+            }
+
+            getFindingsForEntity(entityType, entityId) {
+                return this._findingsByEntity.get(entityId) || [];
+            }
+
+            getExecutionSequence() {
+                if (!this._analysis || !this._analysis.analyses) return [];
+                const execSeq = this._analysis.analyses.execution_sequence;
+                if (!execSeq || !execSeq.findings) return [];
+                return [...execSeq.findings].sort((a, b) => a.display_ordinal - b.display_ordinal);
+            }
+
+            getRelationshipTypes() {
+                const types = new Set();
+                for (const rel of this._relationships) {
+                    types.add(rel.relationship_type);
+                }
+                return [...types];
+            }
+
+            getDocumentTypes() {
+                const types = new Set();
+                for (const [, doc] of this._docMap) {
+                    types.add(doc.document_type);
+                }
+                return [...types];
+            }
+
+            getDefinedTermFlow(termId) {
+                const term = this._termMap.get(termId);
+                if (!term) return null;
+                return {
+                    definingDoc: term.defining_document_id,
+                    usingDocs: term.used_in_document_ids || [],
+                };
+            }
+
+            getFindingsSummary() {
+                const summary = { critical: 0, error: 0, warning: 0, info: 0 };
+                const seen = new Set();
+                for (const finding of this._allFindings) {
+                    if (seen.has(finding.id)) continue;
+                    seen.add(finding.id);
+                    const sev = (finding.severity || '').toUpperCase();
+                    if (sev === 'CRITICAL') summary.critical++;
+                    else if (sev === 'ERROR') summary.error++;
+                    else if (sev === 'WARNING') summary.warning++;
+                    else if (sev === 'INFO') summary.info++;
+                }
+                return summary;
+            }
+        }
+
+        // ============================================================
+        // DataAdapter Tests
+        // ============================================================
+        if (DEBUG) {
+            (function testDataAdapter() {
+                const results = { pass: 0, fail: 0 };
+                const assert = (condition, msg) => {
+                    console.assert(condition, `[FAIL] ${msg}`);
+                    if (condition) { console.log(`[PASS] ${msg}`); results.pass++; }
+                    else { results.fail++; }
+                };
+
+                // -- Test fixture --
+                const testGraph = {
+                    documents: {
+                        'doc-loan': { id: 'doc-loan', name: 'Loan Agreement', document_type: 'loan_agreement', status: 'executed', summary: 'test', key_provisions: [] },
+                        'doc-guaranty': { id: 'doc-guaranty', name: 'Guaranty', document_type: 'guaranty', status: 'executed', summary: 'test', key_provisions: [] },
+                        'doc-deed': { id: 'doc-deed', name: 'Deed of Trust', document_type: 'deed_of_trust', status: 'executed', summary: 'test', key_provisions: [] },
+                    },
+                    relationships: [
+                        { id: 'r1', source_document_id: 'doc-guaranty', target_document_id: 'doc-loan', relationship_type: 'guarantees', confidence: 'high', description: 'Guaranty guarantees Loan' },
+                        { id: 'r2', source_document_id: 'doc-deed', target_document_id: 'doc-loan', relationship_type: 'secures', confidence: 'medium', description: 'Deed secures Loan' },
+                        { id: 'r3', source_document_id: 'doc-loan', target_document_id: 'doc-guaranty', relationship_type: 'controls', confidence: 'high', description: 'Loan controls Guaranty' },
+                    ],
+                    defined_terms: [
+                        { id: 'term-1', term: 'Borrower', defining_document_id: 'doc-loan', used_in_document_ids: ['doc-guaranty', 'doc-deed'] },
+                    ],
+                };
+                const testAnalysis = {
+                    analyses: {
+                        conflicts: {
+                            findings: [
+                                { id: 'f1', severity: 'WARNING', category: 'dangling_reference', title: 'Test Warning', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-loan', document_id: 'doc-loan' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 1 },
+                                { id: 'f2', severity: 'ERROR', category: 'missing_document', title: 'Test Error', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-guaranty', document_id: 'doc-guaranty' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 2 },
+                            ],
+                        },
+                    },
+                };
+
+                const adapter = new DataAdapter(testGraph, testAnalysis);
+
+                // -- getCytoscapeElements --
+                const elements = adapter.getCytoscapeElements();
+                assert(Array.isArray(elements.nodes), 'getCytoscapeElements returns nodes array');
+                assert(Array.isArray(elements.edges), 'getCytoscapeElements returns edges array');
+                assert(elements.nodes.length === 3, 'Node count matches document count');
+                assert(elements.edges.length === 3, 'Edge count matches relationship count');
+
+                const loanNode = elements.nodes.find(n => n.data.id === 'doc-loan');
+                assert(loanNode && loanNode.data.label === 'Loan Agreement', 'Node has correct label');
+                assert(loanNode && loanNode.data.docType === 'loan_agreement', 'Node has docType');
+                assert(loanNode && loanNode.data.status === 'executed', 'Node has status');
+                assert(loanNode && loanNode.classes === 'category-primary', 'Node has category class');
+
+                const edge0 = elements.edges[0];
+                assert(edge0.data.id.includes('::'), 'Edge has deterministic ID format');
+                assert(edge0.data.source && edge0.data.target, 'Edge has source and target');
+                assert(edge0.classes.includes(edge0.data.relType), 'Edge classes include relationship type');
+                assert(edge0.classes.includes(edge0.data.confidence), 'Edge classes include confidence');
+
+                // Verify all edge sources/targets are valid doc IDs
+                const docIds = new Set(elements.nodes.map(n => n.data.id));
+                for (const e of elements.edges) {
+                    assert(docIds.has(e.data.source), `Edge source ${e.data.source} is valid doc ID`);
+                    assert(docIds.has(e.data.target), `Edge target ${e.data.target} is valid doc ID`);
+                }
+
+                // -- Query methods --
+                const details = adapter.getDocumentDetails('doc-loan');
+                assert(details && details.name === 'Loan Agreement', 'getDocumentDetails returns document');
+                assert(adapter.getDocumentDetails('nonexistent') === null, 'getDocumentDetails returns null for missing');
+
+                const relTypes = adapter.getRelationshipTypes();
+                assert(relTypes.includes('guarantees'), 'getRelationshipTypes includes guarantees');
+                assert(new Set(relTypes).size === relTypes.length, 'getRelationshipTypes is deduplicated');
+
+                const docTypes = adapter.getDocumentTypes();
+                assert(docTypes.includes('loan_agreement'), 'getDocumentTypes includes loan_agreement');
+
+                const findings = adapter.getFindingsForEntity('document', 'doc-loan');
+                assert(findings.length === 1, 'getFindingsForEntity returns matching findings');
+                assert(adapter.getFindingsForEntity('document', 'no-match').length === 0, 'getFindingsForEntity returns [] for no match');
+
+                const summary = adapter.getFindingsSummary();
+                assert(summary.warning === 1, 'getFindingsSummary counts warnings');
+                assert(summary.error === 1, 'getFindingsSummary counts errors');
+                assert(summary.critical === 0, 'getFindingsSummary zero critical');
+                assert(summary.info === 0, 'getFindingsSummary zero info');
+
+                const termFlow = adapter.getDefinedTermFlow('term-1');
+                assert(termFlow && termFlow.definingDoc === 'doc-loan', 'getDefinedTermFlow returns defining doc');
+                assert(termFlow && termFlow.usingDocs.length === 2, 'getDefinedTermFlow returns using docs');
+
+                // -- Null analysis --
+                const nullAdapter = new DataAdapter(testGraph, null);
+                assert(nullAdapter.getFindingsForEntity('document', 'doc-loan').length === 0, 'Null analysis: getFindingsForEntity returns []');
+                assert(nullAdapter.getFindingsSummary().critical === 0, 'Null analysis: summary all zeros');
+                assert(nullAdapter.getExecutionSequence().length === 0, 'Null analysis: getExecutionSequence returns []');
+
+                // -- Empty documents --
+                const emptyAdapter = new DataAdapter({ documents: {}, relationships: [] }, null);
+                const emptyElements = emptyAdapter.getCytoscapeElements();
+                assert(emptyElements.nodes.length === 0, 'Empty: no nodes');
+                assert(emptyElements.edges.length === 0, 'Empty: no edges');
+
+                // -- Orphaned findings --
+                const orphanAnalysis = {
+                    analyses: {
+                        conflicts: {
+                            findings: [
+                                { id: 'f-valid', severity: 'ERROR', category: 'test', title: 'Valid', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-loan', document_id: 'doc-loan' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 1 },
+                                { id: 'f-orphan', severity: 'CRITICAL', category: 'test', title: 'Orphan', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-phantom', document_id: 'doc-phantom' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 2 },
+                            ],
+                        },
+                    },
+                };
+                const orphanAdapter = new DataAdapter(testGraph, orphanAnalysis);
+                assert(orphanAdapter.getFindingsSummary().critical === 0, 'Orphaned findings pruned from summary');
+                assert(orphanAdapter.getFindingsForEntity('document', 'doc-phantom').length === 0, 'Orphaned entity returns no findings');
+
+                // -- Cycle detection --
+                const cycleGraph = {
+                    documents: {
+                        'a': { id: 'a', name: 'A', document_type: 'other', status: 'executed' },
+                        'b': { id: 'b', name: 'B', document_type: 'other', status: 'executed' },
+                        'c': { id: 'c', name: 'C', document_type: 'other', status: 'executed' },
+                    },
+                    relationships: [
+                        { id: 'cr1', source_document_id: 'a', target_document_id: 'b', relationship_type: 'references', confidence: 'high', description: 'A->B' },
+                        { id: 'cr2', source_document_id: 'b', target_document_id: 'c', relationship_type: 'references', confidence: 'high', description: 'B->C' },
+                        { id: 'cr3', source_document_id: 'c', target_document_id: 'a', relationship_type: 'references', confidence: 'high', description: 'C->A' },
+                    ],
+                    defined_terms: [],
+                };
+                const cycleAdapter = new DataAdapter(cycleGraph, null);
+                const cycleElements = cycleAdapter.getCytoscapeElements();
+                const cycleEdges = cycleElements.edges.filter(e => e.classes.includes('cycle'));
+                assert(cycleEdges.length > 0, 'Cycle edges detected and marked with cycle class');
+
+                console.log(`--- DataAdapter tests complete: ${results.pass} passed, ${results.fail} failed ---`);
+            })();
+        }
+
+        // ============================================================
+        // AppState — Central shared state
+        // ============================================================
+        const AppState = {
+            activeView: 'graph',
+            layout: 'dagre',
+            filters: {
+                relationshipTypes: [],
+                documentTypes: [],
+                confidenceLevel: 'all',
+            },
+            searchQuery: '',
+            overlayEnabled: false,
+            edgeLabelsVisible: false,
+            selectedEntity: null,
+        };
+
+        // ============================================================
+        // GraphRenderer Class
+        // ============================================================
+        class GraphRenderer {
+            constructor(containerId, elements) {
+                this.containerId = containerId;
+                this.elements = elements;
+
+                // Check if Cytoscape is available (CDN may not have loaded)
+                if (typeof cytoscape === 'undefined') {
+                    console.warn('Cytoscape not loaded — graph rendering skipped');
+                    this.cy = null;
+                    return;
+                }
+
+                this.cy = cytoscape({
+                    container: document.getElementById(containerId),
+                    elements: [...elements.nodes, ...elements.edges],
+                    style: this._buildStylesheet(),
+                    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, animate: false },
+                    userZoomingEnabled: true,
+                    userPanningEnabled: true,
+                    boxSelectionEnabled: false,
+                    minZoom: 0.2,
+                    maxZoom: 4,
+                });
+
+                // Make accessible for debugging
+                window.cy = this.cy;
+            }
+
+            _buildStylesheet() {
+                return [
+                    // ── Base node style ──
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': function(ele) {
+                                const name = ele.data('label') || '';
+                                return name.length > 20 ? name.substring(0, 20) + '…' : name;
+                            },
+                            'width': function(ele) {
+                                return Math.min(80, Math.max(40, 40 + Math.sqrt(ele.degree()) * 10));
+                            },
+                            'height': function(ele) {
+                                return Math.min(80, Math.max(40, 40 + Math.sqrt(ele.degree()) * 10));
+                            },
+                            'font-size': '11px',
+                            'text-valign': 'bottom',
+                            'text-margin-y': 6,
+                            'text-wrap': 'ellipsis',
+                            'text-max-width': '100px',
+                            'border-width': 2,
+                            'border-color': '#e5e7eb',
+                            'color': '#1f2937',
+                        },
+                    },
+                    // ── Node categories ──
+                    { selector: '.category-primary', style: { 'background-color': '#3b82f6', shape: 'rectangle' } },
+                    { selector: '.category-ancillary', style: { 'background-color': '#8b5cf6', shape: 'ellipse' } },
+                    { selector: '.category-financial', style: { 'background-color': '#10b981', shape: 'diamond' } },
+                    { selector: '.category-corporate', style: { 'background-color': '#f59e0b', shape: 'hexagon' } },
+                    { selector: '.category-real-estate', style: { 'background-color': '#6366f1', shape: 'round-rectangle' } },
+                    { selector: '.category-regulatory', style: { 'background-color': '#ef4444', shape: 'triangle' } },
+                    { selector: '.category-closing', style: { 'background-color': '#64748b', shape: 'cut-rectangle' } },
+                    { selector: '.category-other', style: { 'background-color': '#94a3b8', shape: 'ellipse' } },
+
+                    // ── Base edge style ──
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'curve-style': 'bezier',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-color': '#9ca3af',
+                            'line-color': '#9ca3af',
+                            'arrow-scale': 1.2,
+                            'label': '',
+                        },
+                    },
+                    // ── Edge colors by relationship family ──
+                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#ef4444', 'target-arrow-color': '#ef4444' } },
+                    { selector: '.references, .incorporates', style: { 'line-color': '#3b82f6', 'target-arrow-color': '#3b82f6' } },
+                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#10b981', 'target-arrow-color': '#10b981' } },
+                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#8b5cf6', 'target-arrow-color': '#8b5cf6' } },
+                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b' } },
+                    { selector: '.defines_terms_for', style: { 'line-color': '#14b8a6', 'target-arrow-color': '#14b8a6' } },
+
+                    // ── Confidence line styles ──
+                    { selector: '.high', style: { 'line-style': 'solid' } },
+                    { selector: '.medium', style: { 'line-style': 'dashed' } },
+                    { selector: '.low', style: { 'line-style': 'dotted' } },
+
+                    // ── Cycle edges ──
+                    { selector: '.cycle', style: { 'line-color': '#dc2626', 'target-arrow-color': '#dc2626', 'line-style': 'dashed', 'width': 3 } },
+
+                    // ── Visual state classes ──
+                    { selector: '.search-dimmed', style: { 'opacity': 0.2 } },
+                    { selector: '.highlighted', style: { 'border-width': 4, 'border-color': '#2563eb' } },
+                    { selector: '.neighbor-dimmed', style: { 'opacity': 0.15 } },
+                ];
+            }
+
+            applyLayout(layoutName) {
+                if (!this.cy) return;
+                AppState.layout = layoutName;
+                const layoutOpts = { animate: true, animationDuration: 500 };
+                if (layoutName === 'dagre') {
+                    Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80 });
+                } else if (layoutName === 'cola') {
+                    Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 40, edgeLength: 150 });
+                } else if (layoutName === 'breadthfirst') {
+                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 1.5 });
+                }
+                this.cy.layout(layoutOpts).run();
+            }
+
+            highlightNode(nodeId) {
+                if (!this.cy) return;
+                const node = this.cy.getElementById(nodeId);
+                if (!node || node.empty()) return;
+
+                const neighborhood = node.neighborhood().add(node);
+                this.cy.elements().addClass('neighbor-dimmed');
+                neighborhood.removeClass('neighbor-dimmed');
+                node.addClass('highlighted');
+                AppState.selectedEntity = { type: 'node', id: nodeId };
+            }
+
+            clearHighlight() {
+                if (!this.cy) return;
+                this.cy.elements().removeClass('neighbor-dimmed highlighted search-dimmed');
+                AppState.selectedEntity = null;
+            }
+
+            fitToScreen() {
+                if (!this.cy) return;
+                this.cy.fit(undefined, 50);
+            }
+
+            exportSVG() {
+                if (!this.cy) return null;
+                if (typeof this.cy.svg === 'function') {
+                    return this.cy.svg({ full: true });
+                }
+                return null;
+            }
+
+            // Stubs for section-05 (layouts/filtering)
+            filterByRelationshipType(types) { /* implemented in section-05 */ }
+            filterByDocumentType(types) { /* implemented in section-05 */ }
+            filterByConfidence(minLevel) { /* implemented in section-05 */ }
+            searchDocuments(query) { /* implemented in section-05 */ }
+        }
+
+        // ============================================================
+        // Initialize Application
+        // ============================================================
+        const dataAdapter = new DataAdapter(DEAL_GRAPH, DEAL_ANALYSIS);
+        const elements = dataAdapter.getCytoscapeElements();
+        const graphRenderer = new GraphRenderer('graph-container', elements);
+
+        // ============================================================
+        // GraphRenderer Tests (only run when Cytoscape is available)
+        // ============================================================
+        if (DEBUG && graphRenderer.cy) {
+            (function testGraphRenderer() {
+                const results = { pass: 0, fail: 0 };
+                const assert = (condition, msg) => {
+                    console.assert(condition, `[FAIL] ${msg}`);
+                    if (condition) { console.log(`[PASS] ${msg}`); results.pass++; }
+                    else { results.fail++; }
+                };
+
+                const cy = graphRenderer.cy;
+                const expected = dataAdapter.getCytoscapeElements();
+
+                assert(cy !== null, 'Cytoscape instance exists');
+                assert(document.getElementById('graph-container').children.length > 0, 'Graph container has children');
+                assert(cy.nodes().length === expected.nodes.length, `Node count: ${cy.nodes().length} === ${expected.nodes.length}`);
+                assert(cy.edges().length === expected.edges.length, `Edge count: ${cy.edges().length} === ${expected.edges.length}`);
+
+                // Zoom/pan/drag
+                assert(cy.userZoomingEnabled(), 'User zooming enabled');
+                assert(cy.userPanningEnabled(), 'User panning enabled');
+                if (cy.nodes().length > 0) {
+                    assert(cy.nodes().first().grabbable(), 'Nodes are grabbable');
+                }
+
+                // Node size bounds (only if nodes exist)
+                cy.nodes().forEach(n => {
+                    const w = n.width();
+                    assert(w >= 40 && w <= 80, `Node ${n.id()} width ${w} in [40,80]`);
+                });
+
+                // Edge arrows
+                cy.edges().forEach(e => {
+                    const arrow = e.style('target-arrow-shape');
+                    assert(arrow && arrow !== 'none', `Edge ${e.id()} has arrow`);
+                });
+
+                // Confidence line styles
+                const confStyles = { high: 'solid', medium: 'dashed', low: 'dotted' };
+                cy.edges().forEach(e => {
+                    const conf = e.data('confidence');
+                    if (conf && confStyles[conf]) {
+                        assert(e.style('line-style') === confStyles[conf],
+                            `Edge ${e.id()} confidence ${conf} → ${confStyles[conf]}`);
+                    }
+                });
+
+                // Label truncation
+                cy.nodes().forEach(n => {
+                    const label = n.style('label');
+                    assert(label.length <= 23, `Label "${label}" ≤ 23 chars`);
+                });
+
+                console.log(`--- GraphRenderer tests complete: ${results.pass} passed, ${results.fail} failed ---`);
+            })();
+        }
+
+        // ============================================================
+        // Section 04: DetailPanel
+        // ============================================================
+        class DetailPanel {
+            constructor(panelElementId, adapter) {
+                this._panel = document.getElementById(panelElementId);
+                this._content = document.getElementById('detail-panel-content');
+                this._adapter = adapter;
+                this._closeBtn = this._panel.querySelector('.detail-panel-close');
+                this._onTermClick = null;
+
+                this._closeBtn.addEventListener('click', () => this.hide());
+            }
+
+            _renderText(tag, text, className) {
+                const el = document.createElement(tag);
+                el.textContent = text;
+                if (className) el.className = className;
+                return el;
+            }
+
+            _renderBadge(text, className) {
+                const span = document.createElement('span');
+                span.textContent = text;
+                span.className = `badge ${className}`;
+                return span;
+            }
+
+            showDocumentDetail(docId) {
+                const doc = this._adapter.getDocumentDetails(docId);
+                if (!doc) return;
+
+                this._content.innerHTML = '';
+                this._content.appendChild(this._renderText('h3', doc.name, 'text-doc-name'));
+
+                const badges = document.createElement('div');
+                badges.style.cssText = 'display:flex;gap:6px;margin:8px 0';
+                badges.appendChild(this._renderBadge(doc.document_type, 'badge-info'));
+                badges.appendChild(this._renderBadge(doc.status, doc.status === 'executed' ? 'badge-info' : 'badge-warning'));
+                this._content.appendChild(badges);
+
+                if (doc.summary) {
+                    this._content.appendChild(this._renderText('p', doc.summary, 'text-body'));
+                }
+
+                // Parties
+                if (doc.parties && doc.parties.length) {
+                    this._content.appendChild(this._renderText('h4', 'Parties', 'text-section-header'));
+                    const ul = document.createElement('ul');
+                    for (const p of doc.parties) {
+                        const li = document.createElement('li');
+                        li.textContent = `${p.party_id} (${p.role_in_document})`;
+                        ul.appendChild(li);
+                    }
+                    this._content.appendChild(ul);
+                }
+
+                // Key Provisions
+                if (doc.key_provisions && doc.key_provisions.length) {
+                    this._content.appendChild(this._renderText('h4', 'Key Provisions', 'text-section-header'));
+                    for (const prov of doc.key_provisions) {
+                        const div = document.createElement('div');
+                        div.style.marginBottom = '4px';
+                        div.textContent = `${prov.section_reference}: ${prov.summary}`;
+                        this._content.appendChild(div);
+                    }
+                }
+
+                // Findings
+                const findings = this._adapter.getFindingsForEntity('document', docId);
+                if (findings.length) {
+                    this._content.appendChild(this._renderText('h4', `Findings (${findings.length})`, 'text-section-header'));
+                    for (const f of findings) {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'margin-bottom:6px;padding:4px;border-left:3px solid var(--border-color)';
+                        div.appendChild(this._renderBadge(f.severity, `badge-${f.severity.toLowerCase()}`));
+                        const title = document.createElement('span');
+                        title.textContent = ` ${f.title}`;
+                        div.appendChild(title);
+                        this._content.appendChild(div);
+                    }
+                }
+
+                this._panel.classList.add('active');
+                if (graphRenderer.cy) graphRenderer.highlightNode(docId);
+            }
+
+            showRelationshipDetail(edgeData) {
+                this._content.innerHTML = '';
+                this._content.appendChild(this._renderText('h3', edgeData.relType, 'text-doc-name'));
+
+                const info = document.createElement('div');
+                info.className = 'text-body';
+                info.textContent = `${edgeData.source} → ${edgeData.target}`;
+                this._content.appendChild(info);
+
+                if (edgeData.description) {
+                    this._content.appendChild(this._renderText('p', edgeData.description, 'text-body'));
+                }
+
+                this._content.appendChild(this._renderBadge(edgeData.confidence, 'badge-info'));
+
+                if (edgeData.evidence && edgeData.evidence.quote) {
+                    this._content.appendChild(this._renderText('h4', 'Evidence', 'text-section-header'));
+                    const quote = document.createElement('blockquote');
+                    quote.textContent = edgeData.evidence.quote;
+                    quote.style.cssText = 'font-style:italic;border-left:3px solid var(--border-color);padding-left:8px;margin:8px 0';
+                    this._content.appendChild(quote);
+                }
+
+                this._panel.classList.add('active');
+            }
+
+            showTermFlow(termId) {
+                const flow = this._adapter.getDefinedTermFlow(termId);
+                if (!flow) return;
+
+                this._content.innerHTML = '';
+                this._content.appendChild(this._renderText('h3', 'Term Flow', 'text-doc-name'));
+                this._content.appendChild(this._renderText('p', `Defined in: ${flow.definingDoc}`, 'text-body'));
+
+                if (flow.usingDocs.length) {
+                    this._content.appendChild(this._renderText('h4', 'Used in:', 'text-section-header'));
+                    const ul = document.createElement('ul');
+                    for (const docId of flow.usingDocs) {
+                        const li = document.createElement('li');
+                        li.textContent = docId;
+                        li.style.cursor = 'pointer';
+                        li.style.color = 'var(--cat-primary)';
+                        li.addEventListener('click', () => this.showDocumentDetail(docId));
+                        ul.appendChild(li);
+                    }
+                    this._content.appendChild(ul);
+                }
+
+                this._panel.classList.add('active');
+            }
+
+            hide() {
+                this._panel.classList.remove('active');
+                graphRenderer.clearHighlight();
+                AppState.selectedEntity = null;
+            }
+        }
+
+        const detailPanel = new DetailPanel('detail-panel', dataAdapter);
+
+        // Wire Cytoscape events
+        if (graphRenderer.cy) {
+            graphRenderer.cy.on('tap', 'node', function(evt) {
+                detailPanel.showDocumentDetail(evt.target.id());
+            });
+            graphRenderer.cy.on('tap', 'edge', function(evt) {
+                detailPanel.showRelationshipDetail(evt.target.data());
+            });
+            graphRenderer.cy.on('tap', function(evt) {
+                if (evt.target === graphRenderer.cy) {
+                    detailPanel.hide();
+                }
+            });
+        }
+
+        // ============================================================
+        // Section 05: FilterManager + Layout Switching
+        // ============================================================
+        class FilterManager {
+            constructor(adapter, renderer) {
+                this._adapter = adapter;
+                this._renderer = renderer;
+                this._searchTimeout = null;
+            }
+
+            init() {
+                // Layout switcher
+                const layoutSelect = document.getElementById('layout-switcher');
+                if (layoutSelect) {
+                    layoutSelect.addEventListener('change', (e) => {
+                        this._renderer.applyLayout(e.target.value);
+                    });
+                }
+
+                // Search box
+                const searchBox = document.getElementById('search-box');
+                if (searchBox) {
+                    searchBox.addEventListener('input', (e) => {
+                        clearTimeout(this._searchTimeout);
+                        this._searchTimeout = setTimeout(() => {
+                            this._onSearchInput(e.target.value);
+                        }, 200);
+                    });
+                }
+
+                // Filter trigger (toggle filter panel)
+                const filterBtn = document.getElementById('filter-trigger');
+                const filterPanel = document.getElementById('filter-panel');
+                if (filterBtn && filterPanel) {
+                    filterBtn.addEventListener('click', () => {
+                        filterPanel.style.display = filterPanel.style.display === 'none' ? 'block' : 'none';
+                    });
+                    this._buildFilterPanel(filterPanel);
+                }
+
+                // Reset view
+                const resetBtn = document.getElementById('btn-reset-view');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', () => this.resetAll());
+                }
+            }
+
+            _buildFilterPanel(panel) {
+                panel.innerHTML = '';
+                // Relationship type checkboxes
+                const relTypes = this._adapter.getRelationshipTypes();
+                if (relTypes.length) {
+                    const h4 = document.createElement('h4');
+                    h4.textContent = 'Relationship Types';
+                    h4.className = 'text-section-header';
+                    panel.appendChild(h4);
+                    for (const rt of relTypes) {
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display:block;margin:4px 0;cursor:pointer';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.checked = true;
+                        cb.dataset.relType = rt;
+                        cb.addEventListener('change', () => this._applyFilters());
+                        label.appendChild(cb);
+                        label.appendChild(document.createTextNode(` ${rt}`));
+                        panel.appendChild(label);
+                    }
+                }
+
+                // Document type checkboxes
+                const docTypes = this._adapter.getDocumentTypes();
+                if (docTypes.length) {
+                    const h4 = document.createElement('h4');
+                    h4.textContent = 'Document Types';
+                    h4.className = 'text-section-header';
+                    h4.style.marginTop = '12px';
+                    panel.appendChild(h4);
+                    for (const dt of docTypes) {
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display:block;margin:4px 0;cursor:pointer';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.checked = true;
+                        cb.dataset.docType = dt;
+                        cb.addEventListener('change', () => this._applyFilters());
+                        label.appendChild(cb);
+                        label.appendChild(document.createTextNode(` ${dt}`));
+                        panel.appendChild(label);
+                    }
+                }
+
+                // Reset filters button
+                const resetBtn = document.createElement('button');
+                resetBtn.textContent = 'Reset Filters';
+                resetBtn.style.marginTop = '12px';
+                resetBtn.addEventListener('click', () => this.resetAll());
+                panel.appendChild(resetBtn);
+            }
+
+            _applyFilters() {
+                if (!this._renderer.cy) return;
+                const cy = this._renderer.cy;
+
+                // Relationship type filter
+                const activeRelTypes = new Set();
+                document.querySelectorAll('[data-rel-type]').forEach(cb => {
+                    if (cb.checked) activeRelTypes.add(cb.dataset.relType);
+                });
+                cy.edges().forEach(e => {
+                    e.toggleClass('filtered-out', !activeRelTypes.has(e.data('relType')));
+                });
+
+                // Document type filter
+                const activeDocTypes = new Set();
+                document.querySelectorAll('[data-doc-type]').forEach(cb => {
+                    if (cb.checked) activeDocTypes.add(cb.dataset.docType);
+                });
+                cy.nodes().forEach(n => {
+                    const hidden = !activeDocTypes.has(n.data('docType'));
+                    n.toggleClass('filtered-out', hidden);
+                    if (hidden) n.connectedEdges().addClass('filtered-out');
+                });
+            }
+
+            _onSearchInput(query) {
+                if (!this._renderer.cy) return;
+                AppState.searchQuery = query;
+                const cy = this._renderer.cy;
+                const lowerQuery = query.toLowerCase().trim();
+
+                if (!lowerQuery) {
+                    cy.nodes().removeClass('search-dimmed');
+                    return;
+                }
+
+                cy.nodes().forEach(n => {
+                    const name = (n.data('label') || '').toLowerCase();
+                    n.toggleClass('search-dimmed', !name.includes(lowerQuery));
+                });
+            }
+
+            resetAll() {
+                // Reset checkboxes
+                document.querySelectorAll('[data-rel-type], [data-doc-type]').forEach(cb => cb.checked = true);
+                // Reset search
+                const searchBox = document.getElementById('search-box');
+                if (searchBox) searchBox.value = '';
+                AppState.searchQuery = '';
+                // Clear visual state
+                if (this._renderer.cy) {
+                    this._renderer.cy.elements().removeClass('filtered-out search-dimmed');
+                    this._renderer.clearHighlight();
+                    this._renderer.fitToScreen();
+                    this._renderer.applyLayout(AppState.layout);
+                }
+            }
+        }
+
+        const filterManager = new FilterManager(dataAdapter, graphRenderer);
+        filterManager.init();
+
+        // Add filtered-out style to Cytoscape
+        if (graphRenderer.cy) {
+            graphRenderer.cy.style().selector('.filtered-out').style({ 'display': 'none' }).update();
+        }
+
+        // ============================================================
+        // Section 06: AnalysisOverlay
+        // ============================================================
+        class AnalysisOverlay {
+            constructor(renderer, adapter) {
+                this._renderer = renderer;
+                this._adapter = adapter;
+                this._enabled = false;
+            }
+
+            enable() {
+                if (!this._renderer.cy) return;
+                this._enabled = true;
+                AppState.overlayEnabled = true;
+
+                const cy = this._renderer.cy;
+                cy.nodes().forEach(n => {
+                    const findings = this._adapter.getFindingsForEntity('document', n.id());
+                    if (!findings.length) return;
+
+                    // Find highest severity
+                    const sevOrder = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
+                    let highest = 'INFO';
+                    for (const f of findings) {
+                        if (sevOrder.indexOf(f.severity) < sevOrder.indexOf(highest)) {
+                            highest = f.severity;
+                        }
+                    }
+                    n.addClass(`finding-${highest.toLowerCase()}`);
+                });
+
+                // Update toggle button state
+                const btn = document.getElementById('toggle-issues');
+                if (btn) btn.setAttribute('aria-pressed', 'true');
+            }
+
+            disable() {
+                if (!this._renderer.cy) return;
+                this._enabled = false;
+                AppState.overlayEnabled = false;
+
+                this._renderer.cy.nodes().removeClass('finding-critical finding-error finding-warning finding-info');
+                const btn = document.getElementById('toggle-issues');
+                if (btn) btn.setAttribute('aria-pressed', 'false');
+            }
+
+            highlightFinding(findingId) { /* future: highlight specific finding's entities */ }
+
+            isEnabled() { return this._enabled; }
+        }
+
+        const analysisOverlay = new AnalysisOverlay(graphRenderer, dataAdapter);
+
+        // Add overlay styles to Cytoscape
+        if (graphRenderer.cy) {
+            graphRenderer.cy.style()
+                .selector('.finding-critical').style({ 'border-color': '#dc2626', 'border-width': 5 })
+                .selector('.finding-error').style({ 'border-color': '#d97706', 'border-width': 4 })
+                .selector('.finding-warning').style({ 'border-color': '#2563eb', 'border-width': 4 })
+                .selector('.finding-info').style({ 'border-color': '#6b7280', 'border-width': 3 })
+                .update();
+        }
+
+        // Wire toggle button
+        const toggleIssuesBtn = document.getElementById('toggle-issues');
+        if (toggleIssuesBtn) {
+            toggleIssuesBtn.addEventListener('click', () => {
+                if (analysisOverlay.isEnabled()) {
+                    analysisOverlay.disable();
+                } else {
+                    analysisOverlay.enable();
+                }
+            });
+        }
+
+        // ============================================================
+        // Section 07: TimelineView
+        // ============================================================
+        class TimelineView {
+            constructor(containerId, adapter) {
+                this._container = document.getElementById(containerId);
+                this._adapter = adapter;
+                this._docClickCallback = null;
+            }
+
+            render() {
+                this._container.innerHTML = '';
+                const steps = this._adapter.getExecutionSequence();
+
+                if (!steps.length) {
+                    const msg = document.createElement('p');
+                    msg.textContent = 'Execution sequence analysis not available.';
+                    msg.style.cssText = 'text-align:center;color:var(--text-secondary);padding:40px';
+                    this._container.appendChild(msg);
+                    return;
+                }
+
+                const table = document.createElement('table');
+                table.style.cssText = 'width:100%;border-collapse:collapse';
+
+                // Header
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                for (const h of ['#', 'Document', 'Category', 'Status', 'Description']) {
+                    const th = document.createElement('th');
+                    th.textContent = h;
+                    th.style.cssText = 'text-align:left;padding:8px 12px;border-bottom:2px solid var(--border-color);font-weight:600';
+                    headerRow.appendChild(th);
+                }
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Body
+                const tbody = document.createElement('tbody');
+                for (const step of steps) {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border-color)';
+
+                    const tdOrd = document.createElement('td');
+                    tdOrd.textContent = step.display_ordinal;
+                    tdOrd.style.padding = '8px 12px';
+                    tr.appendChild(tdOrd);
+
+                    const tdDoc = document.createElement('td');
+                    tdDoc.style.padding = '8px 12px';
+                    const entities = step.affected_entities || [];
+                    const docEntities = entities.filter(e => e.entity_type === 'document');
+                    for (const e of docEntities) {
+                        const link = document.createElement('span');
+                        link.textContent = e.entity_id;
+                        link.style.cssText = 'cursor:pointer;color:var(--cat-primary);text-decoration:underline';
+                        link.addEventListener('click', () => {
+                            if (this._docClickCallback) this._docClickCallback(e.entity_id);
+                        });
+                        tdDoc.appendChild(link);
+                        tdDoc.appendChild(document.createTextNode(' '));
+                    }
+                    tr.appendChild(tdDoc);
+
+                    const tdCat = document.createElement('td');
+                    tdCat.textContent = step.category || '';
+                    tdCat.style.padding = '8px 12px';
+                    tr.appendChild(tdCat);
+
+                    const tdStatus = document.createElement('td');
+                    tdStatus.style.padding = '8px 12px';
+                    const statusBadge = document.createElement('span');
+                    statusBadge.textContent = step.severity || '';
+                    statusBadge.className = `badge badge-${(step.severity || 'info').toLowerCase()}`;
+                    tdStatus.appendChild(statusBadge);
+                    tr.appendChild(tdStatus);
+
+                    const tdDesc = document.createElement('td');
+                    tdDesc.textContent = step.description || '';
+                    tdDesc.style.padding = '8px 12px';
+                    tr.appendChild(tdDesc);
+
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+                this._container.appendChild(table);
+            }
+
+            onDocumentClick(callback) {
+                this._docClickCallback = callback;
+            }
+        }
+
+        const timelineView = new TimelineView('timeline-container', dataAdapter);
+        timelineView.onDocumentClick((docId) => {
+            // Switch back to graph view and highlight
+            document.getElementById('view-switcher').value = 'graph';
+            document.getElementById('graph-container').style.display = '';
+            document.getElementById('timeline-container').style.display = 'none';
+            AppState.activeView = 'graph';
+            detailPanel.showDocumentDetail(docId);
+        });
+
+        // View switcher
+        const viewSwitcher = document.getElementById('view-switcher');
+        if (viewSwitcher) {
+            viewSwitcher.addEventListener('change', (e) => {
+                const view = e.target.value;
+                AppState.activeView = view;
+                if (view === 'timeline') {
+                    document.getElementById('graph-container').style.display = 'none';
+                    document.getElementById('timeline-container').style.display = 'block';
+                    timelineView.render();
+                } else {
+                    document.getElementById('graph-container').style.display = '';
+                    document.getElementById('timeline-container').style.display = 'none';
+                }
+            });
+        }
+
+        // ============================================================
+        // Section 08: PDFExporter
+        // ============================================================
+        class PDFExporter {
+            constructor(adapter, renderer) {
+                this._adapter = adapter;
+                this._renderer = renderer;
+            }
+
+            async generate() {
+                if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+                    console.warn('jsPDF not loaded — PDF export unavailable');
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf || jspdf;
+                const dealName = DEAL_GRAPH.deal ? DEAL_GRAPH.deal.name : 'Deal';
+                const date = new Date().toISOString().split('T')[0];
+
+                // Page 1: Landscape with graph
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+                doc.setFontSize(20);
+                doc.text(dealName, 14, 20);
+                doc.setFontSize(12);
+                doc.text('Document Dependency Analysis', 14, 28);
+                doc.setFontSize(10);
+                doc.text(`Generated: ${date}`, 14, 35);
+
+                // Try graph image
+                if (this._renderer.cy) {
+                    try {
+                        const png = this._renderer.cy.png({ scale: 2, full: true });
+                        doc.addImage(png, 'PNG', 14, 42, 250, 140);
+                    } catch (e) {
+                        doc.text('Graph image unavailable', 14, 50);
+                    }
+                }
+
+                // Page 2+: Document summary table (portrait)
+                doc.addPage('letter', 'portrait');
+                doc.setFontSize(14);
+                doc.text('Document Summary', 14, 20);
+
+                const docs = Object.values(DEAL_GRAPH.documents || {});
+                if (docs.length && typeof doc.autoTable === 'function') {
+                    doc.autoTable({
+                        startY: 25,
+                        head: [['Name', 'Type', 'Status']],
+                        body: docs.map(d => [
+                            (d.name || '').substring(0, 50),
+                            d.document_type || '',
+                            d.status || '',
+                        ]),
+                        styles: { fontSize: 9 },
+                    });
+                }
+
+                // Relationships table
+                const rels = DEAL_GRAPH.relationships || [];
+                if (rels.length && typeof doc.autoTable === 'function') {
+                    doc.addPage('letter', 'portrait');
+                    doc.setFontSize(14);
+                    doc.text('Relationships', 14, 20);
+                    doc.autoTable({
+                        startY: 25,
+                        head: [['Source', 'Target', 'Type', 'Confidence']],
+                        body: rels.map(r => [
+                            r.source_document_id,
+                            r.target_document_id,
+                            r.relationship_type,
+                            r.confidence,
+                        ]),
+                        styles: { fontSize: 9 },
+                    });
+                }
+
+                // Findings report
+                const summary = this._adapter.getFindingsSummary();
+                if (summary.critical + summary.error + summary.warning + summary.info > 0) {
+                    doc.addPage('letter', 'portrait');
+                    doc.setFontSize(14);
+                    doc.text('Analysis Findings', 14, 20);
+                    doc.setFontSize(10);
+                    doc.text(`Critical: ${summary.critical}  Error: ${summary.error}  Warning: ${summary.warning}  Info: ${summary.info}`, 14, 28);
+                }
+
+                // Save
+                doc.save(`${dealName.replace(/[^a-z0-9]/gi, '-')}-analysis-${date}.pdf`);
+            }
+        }
+
+        const pdfExporter = new PDFExporter(dataAdapter, graphRenderer);
+        const exportBtn = document.getElementById('btn-export-pdf');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => pdfExporter.generate());
+        }
+
+        // ============================================================
+        // Section 09: Polish — Error handling, keyboard shortcuts, edge labels
+        // ============================================================
+
+        // CDN load check
+        if (window.__cdnFailed) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px';
+            errDiv.innerHTML = '<h2 style="color:#dc2626">Required libraries could not be loaded</h2>'
+                + '<p>Please check your internet connection and reload.</p>'
+                + '<p style="color:#6b7280">Failed: ' + (window.__cdnFailedLib || []).join(', ') + '</p>';
+            document.body.appendChild(errDiv);
+        }
+
+        // Edge Labels toggle
+        const edgeLabelsBtn = document.getElementById('toggle-edge-labels');
+        if (edgeLabelsBtn && graphRenderer.cy) {
+            edgeLabelsBtn.addEventListener('click', () => {
+                AppState.edgeLabelsVisible = !AppState.edgeLabelsVisible;
+                edgeLabelsBtn.setAttribute('aria-pressed', String(AppState.edgeLabelsVisible));
+                graphRenderer.cy.edges().forEach(e => {
+                    e.style('label', AppState.edgeLabelsVisible ? e.data('relType') : '');
+                });
+            });
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (evt) => {
+            if (evt.target.tagName === 'INPUT' || evt.target.tagName === 'SELECT') return;
+            if (evt.key === 'Escape') {
+                detailPanel.hide();
+            } else if (evt.key === 'f' || evt.key === 'F') {
+                if (graphRenderer.cy) graphRenderer.fitToScreen();
+            } else if (evt.key === 'r' || evt.key === 'R') {
+                filterManager.resetAll();
+            }
+        });
+    </script>
+</body>
+</html>

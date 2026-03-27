@@ -1,0 +1,54 @@
+{
+  "document_type": "guaranty",
+  "name": "Guaranty Agreement",
+  "parties": [
+    {
+      "name": "Thompson Capital Group, Inc.",
+      "role": "Guarantor",
+      "aliases": [
+        "TCG"
+      ],
+      "entity_type": "Corporation",
+      "jurisdiction": "Delaware"
+    },
+    {
+      "name": "First National Bank, N.A.",
+      "role": "Lender",
+      "aliases": [
+        "FNB"
+      ],
+      "entity_type": null,
+      "jurisdiction": null
+    }
+  ],
+  "execution_date_raw": "January 15, 2025",
+  "execution_date_iso": "2025-01-15",
+  "defined_terms": [
+    {
+      "term": "Guarantor",
+      "section_reference": "Preamble",
+      "definition_snippet": null
+    },
+    {
+      "term": "Obligations",
+      "section_reference": "Section 1.1",
+      "definition_snippet": "All obligations of the Borrower under the Loan Agreement"
+    }
+  ],
+  "key_provisions": [
+    {
+      "section_reference": "1.1",
+      "title": "Guaranty of Payment",
+      "summary": "Unconditional guaranty of all obligations under the Loan Agreement",
+      "provision_type": "covenant"
+    }
+  ],
+  "obligations": [
+    "Guarantee all loan obligations",
+    "Maintain minimum net worth of $10M"
+  ],
+  "document_references": [
+    "Loan Agreement"
+  ],
+  "summary": "Thompson Capital Group unconditionally guarantees all obligations of Riverside Holdings under the Loan Agreement."
+}

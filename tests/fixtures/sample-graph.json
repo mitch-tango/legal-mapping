@@ -1,0 +1,451 @@
+{
+  "schema_version": "1.0.0",
+  "deal": {
+    "name": "Riverside Office Acquisition",
+    "deal_type": "acquisition",
+    "primary_parties": [
+      "p-001",
+      "p-002"
+    ],
+    "closing_date": "2025-03-15",
+    "status": "active",
+    "notes": "Mixed-use office complex acquisition with seller financing",
+    "created_at": "2025-01-15T10:00:00Z",
+    "updated_at": "2025-01-15T12:00:00Z"
+  },
+  "parties": {
+    "p-001": {
+      "id": "p-001",
+      "canonical_name": "Riverside Holdings LLC",
+      "aliases": [
+        "Riverside",
+        "Riverside Holdings"
+      ],
+      "raw_names": [
+        "RIVERSIDE HOLDINGS, LLC",
+        "Riverside Holdings LLC"
+      ],
+      "entity_type": "LLC",
+      "jurisdiction": "Delaware",
+      "deal_roles": [
+        "Borrower",
+        "Buyer"
+      ],
+      "confidence": "high"
+    },
+    "p-002": {
+      "id": "p-002",
+      "canonical_name": "First National Bank",
+      "aliases": [
+        "FNB",
+        "First National"
+      ],
+      "raw_names": [
+        "First National Bank, N.A.",
+        "FIRST NATIONAL BANK"
+      ],
+      "entity_type": "Corporation",
+      "jurisdiction": "New York",
+      "deal_roles": [
+        "Lender"
+      ],
+      "confidence": "high"
+    },
+    "p-003": {
+      "id": "p-003",
+      "canonical_name": "Thompson Capital Group",
+      "aliases": [
+        "TCG"
+      ],
+      "raw_names": [
+        "Thompson Capital Group, Inc."
+      ],
+      "entity_type": "Corporation",
+      "jurisdiction": "Delaware",
+      "deal_roles": [
+        "Guarantor"
+      ],
+      "confidence": "high"
+    },
+    "p-004": {
+      "id": "p-004",
+      "canonical_name": "Metro Title Services",
+      "aliases": [],
+      "raw_names": [
+        "Metro Title Services, Inc."
+      ],
+      "entity_type": "Corporation",
+      "jurisdiction": "California",
+      "deal_roles": [
+        "Title Company"
+      ],
+      "confidence": "medium"
+    }
+  },
+  "documents": {
+    "doc-001": {
+      "id": "doc-001",
+      "name": "Loan Agreement",
+      "document_type": "loan_agreement",
+      "parties": [
+        {
+          "party_id": "p-001",
+          "role_in_document": "Borrower"
+        },
+        {
+          "party_id": "p-002",
+          "role_in_document": "Lender"
+        }
+      ],
+      "execution_date_raw": "January 15, 2025",
+      "execution_date_iso": "2025-01-15",
+      "status": "executed",
+      "source_file_path": "/docs/loan-agreement.pdf",
+      "file_hash": "sha256_1a2b3c4d5e6f",
+      "key_provisions": [
+        {
+          "section_reference": "2.1",
+          "title": "Loan Amount",
+          "summary": "Principal amount of $5,000,000",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "4.1",
+          "title": "Repayment Terms",
+          "summary": "Monthly payments over 20 years at 5.5% fixed rate",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "7.1",
+          "title": "Events of Default",
+          "summary": "Failure to pay, breach of covenants, material adverse change",
+          "provision_type": "default"
+        }
+      ],
+      "summary": "Senior secured loan of $5M from First National Bank to Riverside Holdings for acquisition of Riverside Office Complex.",
+      "obligations": [
+        "Make monthly payments",
+        "Maintain property insurance",
+        "Provide annual financial statements"
+      ],
+      "extraction": {
+        "extracted_at": "2025-01-15T10:30:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_abc123",
+        "processing_time_ms": 4500,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-002": {
+      "id": "doc-002",
+      "name": "Guaranty Agreement",
+      "document_type": "guaranty",
+      "parties": [
+        {
+          "party_id": "p-003",
+          "role_in_document": "Guarantor"
+        },
+        {
+          "party_id": "p-002",
+          "role_in_document": "Lender"
+        }
+      ],
+      "execution_date_raw": "January 15, 2025",
+      "execution_date_iso": "2025-01-15",
+      "status": "executed",
+      "source_file_path": "/docs/guaranty.pdf",
+      "file_hash": "sha256_7g8h9i0j",
+      "key_provisions": [
+        {
+          "section_reference": "1.1",
+          "title": "Guaranty of Payment",
+          "summary": "Unconditional guaranty of all obligations under the Loan Agreement",
+          "provision_type": "covenant"
+        }
+      ],
+      "summary": "Thompson Capital Group unconditionally guarantees all obligations of Riverside Holdings under the Loan Agreement.",
+      "obligations": [
+        "Guarantee all loan obligations",
+        "Maintain minimum net worth of $10M"
+      ],
+      "extraction": {
+        "extracted_at": "2025-01-15T10:30:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_abc123",
+        "processing_time_ms": 4500,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-003": {
+      "id": "doc-003",
+      "name": "Deed of Trust",
+      "document_type": "deed_of_trust",
+      "parties": [
+        {
+          "party_id": "p-001",
+          "role_in_document": "Trustor"
+        },
+        {
+          "party_id": "p-002",
+          "role_in_document": "Beneficiary"
+        }
+      ],
+      "execution_date_raw": "January 15, 2025",
+      "execution_date_iso": "2025-01-15",
+      "status": "executed",
+      "source_file_path": "/docs/deed-of-trust.pdf",
+      "file_hash": "sha256_klmnop",
+      "key_provisions": [],
+      "summary": "Deed of trust granting First National Bank a security interest in the Riverside Office Complex property.",
+      "obligations": [],
+      "extraction": {
+        "extracted_at": "2025-01-15T10:30:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_abc123",
+        "processing_time_ms": 4500,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-004": {
+      "id": "doc-004",
+      "name": "Operating Agreement",
+      "document_type": "operating_agreement",
+      "parties": [
+        {
+          "party_id": "p-001",
+          "role_in_document": "Company"
+        },
+        {
+          "party_id": "p-003",
+          "role_in_document": "Managing Member"
+        }
+      ],
+      "execution_date_raw": null,
+      "execution_date_iso": null,
+      "status": "draft",
+      "source_file_path": "/docs/operating-agreement.docx",
+      "file_hash": "sha256_qrstuv",
+      "key_provisions": [],
+      "summary": "Operating agreement for Riverside Holdings LLC governing management structure and member rights.",
+      "obligations": [],
+      "extraction": {
+        "extracted_at": "2025-01-15T10:30:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_abc123",
+        "processing_time_ms": 4500,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    }
+  },
+  "relationships": [
+    {
+      "id": "rel-001",
+      "source_document_id": "doc-001",
+      "target_document_id": "doc-002",
+      "relationship_type": "controls",
+      "source_reference": null,
+      "evidence": {
+        "quote": "Subject to the terms and conditions of the Loan Agreement",
+        "page": 1
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement controls the obligations guaranteed under the Guaranty",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-002",
+      "source_document_id": "doc-002",
+      "target_document_id": "doc-001",
+      "relationship_type": "guarantees",
+      "source_reference": null,
+      "evidence": {
+        "quote": "Guarantor hereby unconditionally guarantees payment of all Obligations",
+        "page": 2
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Guaranty guarantees the obligations under the Loan Agreement",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-003",
+      "source_document_id": "doc-003",
+      "target_document_id": "doc-001",
+      "relationship_type": "secures",
+      "source_reference": null,
+      "evidence": null,
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Deed of Trust secures the obligations under the Loan Agreement",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-004",
+      "source_document_id": "doc-001",
+      "target_document_id": "doc-003",
+      "relationship_type": "references",
+      "source_reference": "Section 3.1",
+      "evidence": null,
+      "confidence": "medium",
+      "needs_review": true,
+      "is_manual": false,
+      "description": "Loan Agreement references the Deed of Trust as collateral document",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-005",
+      "source_document_id": "doc-001",
+      "target_document_id": "doc-004",
+      "relationship_type": "references",
+      "source_reference": "Section 5.2",
+      "evidence": null,
+      "confidence": "medium",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement references the Operating Agreement for borrower entity structure",
+      "ai_original_values": null,
+      "extraction": null
+    }
+  ],
+  "defined_terms": [
+    {
+      "id": "term-001",
+      "term": "Borrower",
+      "defining_document_id": "doc-001",
+      "section_reference": "Preamble",
+      "definition_snippet": "Riverside Holdings LLC, a Delaware limited liability company",
+      "used_in_document_ids": [
+        "doc-002",
+        "doc-003"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "term-002",
+      "term": "Loan",
+      "defining_document_id": "doc-001",
+      "section_reference": "Section 1.1",
+      "definition_snippet": "The loan in the principal amount of Five Million Dollars",
+      "used_in_document_ids": [
+        "doc-002",
+        "doc-003"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "term-003",
+      "term": "Property",
+      "defining_document_id": "doc-003",
+      "section_reference": "Exhibit A",
+      "definition_snippet": "The real property located at 100 Riverside Drive",
+      "used_in_document_ids": [
+        "doc-001"
+      ],
+      "confidence": "high"
+    }
+  ],
+  "cross_references": [
+    {
+      "id": "xref-001",
+      "source_document_id": "doc-002",
+      "source_section": "Section 1.1",
+      "target_document_id": "doc-001",
+      "target_section": "Section 2.1",
+      "reference_text": "as defined in Section 2.1 of the Loan Agreement",
+      "evidence": null,
+      "confidence": "high",
+      "needs_review": false
+    }
+  ],
+  "conditions_precedent": [
+    {
+      "id": "cp-001",
+      "description": "Title insurance policy must be delivered",
+      "source_document_id": "doc-001",
+      "source_section": "Section 6.1(a)",
+      "required_document_id": null,
+      "enables_document_id": "doc-003",
+      "status": "pending",
+      "confidence": "high"
+    },
+    {
+      "id": "cp-002",
+      "description": "Guaranty must be executed and delivered",
+      "source_document_id": "doc-001",
+      "source_section": "Section 6.1(c)",
+      "required_document_id": "doc-002",
+      "enables_document_id": "doc-001",
+      "status": "satisfied",
+      "confidence": "high"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "ann-001",
+      "entity_type": "relationship",
+      "entity_id": "rel-004",
+      "note": "Verify this cross-reference is correctly identified",
+      "flagged": true,
+      "created_at": "2025-01-15T11:00:00Z",
+      "updated_at": "2025-01-15T11:00:00Z"
+    }
+  ],
+  "extraction_log": [
+    {
+      "id": "ev-001",
+      "document_id": "doc-001",
+      "action": "initial",
+      "timestamp": "2025-01-15T10:30:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": null
+    },
+    {
+      "id": "ev-002",
+      "document_id": "doc-002",
+      "action": "initial",
+      "timestamp": "2025-01-15T10:35:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": null
+    },
+    {
+      "id": "ev-003",
+      "document_id": "doc-003",
+      "action": "initial",
+      "timestamp": "2025-01-15T10:40:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": null
+    },
+    {
+      "id": "ev-004",
+      "document_id": "doc-004",
+      "action": "initial",
+      "timestamp": "2025-01-15T10:45:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": null
+    }
+  ]
+}

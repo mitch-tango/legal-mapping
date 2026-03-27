@@ -1,0 +1,34 @@
+{
+  "relationships": [
+    {
+      "source_reference": "Section 1.1",
+      "target_document_name": "Guaranty Agreement",
+      "relationship_type": "controls",
+      "direction_test_result": "The Loan Agreement governs Guaranty Agreement",
+      "evidence_quote": "Subject to the terms and conditions of the Loan Agreement",
+      "evidence_page": 1,
+      "confidence": "high",
+      "description": "Loan Agreement controls the obligations guaranteed under the Guaranty"
+    },
+    {
+      "source_reference": null,
+      "target_document_name": "Deed of Trust",
+      "relationship_type": "references",
+      "direction_test_result": "The Loan Agreement cites Deed of Trust",
+      "evidence_quote": "as secured by the Deed of Trust",
+      "evidence_page": 3,
+      "confidence": "medium",
+      "description": "Loan Agreement references the Deed of Trust as collateral"
+    },
+    {
+      "source_reference": null,
+      "target_document_name": "Operating Agreement",
+      "relationship_type": "references",
+      "direction_test_result": "The Loan Agreement cites Operating Agreement",
+      "evidence_quote": null,
+      "evidence_page": null,
+      "confidence": "medium",
+      "description": "Loan Agreement references borrower entity structure"
+    }
+  ]
+}
