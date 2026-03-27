@@ -1,0 +1,347 @@
+{
+  "schema_version": "1.0.0",
+  "deal_graph_hash": "sha256_synthetic_test_hash",
+  "analyses": {
+    "hierarchy": {
+      "analysis_type": "hierarchy",
+      "status": "completed",
+      "completion": "complete",
+      "run_timestamp": "2026-03-27T11:00:00Z",
+      "model_used": "claude-sonnet-4-20250514",
+      "findings": [
+        {
+          "id": "h-001",
+          "display_ordinal": 1,
+          "severity": "INFO",
+          "category": "controlling_authority",
+          "title": "Loan Agreement controls JV Agreement amendments",
+          "description": "The Loan Agreement (Section 9.1) requires Lender consent for any amendment to the JV Agreement. This effectively gives First Metro Bank veto power over JV structural changes.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 9.1"},
+            {"entity_type": "document", "entity_id": "doc-jv", "document_id": "doc-jv", "section": null}
+          ],
+          "confidence": "high",
+          "source": "explicit",
+          "verified": true
+        },
+        {
+          "id": "h-002",
+          "display_ordinal": 2,
+          "severity": "INFO",
+          "category": "explicit_hierarchy",
+          "title": "JV Agreement supersedes Operating Agreement",
+          "description": "JV Agreement Section 1.2 contains an explicit conflict resolution clause: in any conflict with the Operating Agreement, the JV Agreement controls.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-jv", "document_id": "doc-jv", "section": "Section 1.2"},
+            {"entity_type": "document", "entity_id": "doc-oa", "document_id": "doc-oa", "section": null}
+          ],
+          "confidence": "high",
+          "source": "explicit",
+          "verified": true
+        },
+        {
+          "id": "h-003",
+          "display_ordinal": 3,
+          "severity": "WARNING",
+          "category": "dual_authority_conflict",
+          "title": "Dual authority over Operating Agreement amendments",
+          "description": "Both the Loan Agreement (Section 9.2) and the JV Agreement (Section 1.2) claim control over the Operating Agreement. The Loan Agreement requires Lender consent for material amendments, while the JV Agreement claims general supremacy. The interaction is unclear if a JV-permitted amendment would trigger the Lender's material amendment restriction.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 9.2"},
+            {"entity_type": "document", "entity_id": "doc-jv", "document_id": "doc-jv", "section": "Section 1.2"},
+            {"entity_type": "document", "entity_id": "doc-oa", "document_id": "doc-oa", "section": null}
+          ],
+          "confidence": "medium",
+          "source": "inferred",
+          "verified": false
+        }
+      ],
+      "summary": {
+        "total_findings": 3,
+        "by_severity": {"INFO": 2, "WARNING": 1},
+        "key_findings": [
+          "Loan Agreement has effective veto over JV structural changes",
+          "Potential dual authority conflict over Operating Agreement amendments"
+        ]
+      },
+      "errors": []
+    },
+    "conflicts": {
+      "analysis_type": "conflicts",
+      "status": "completed",
+      "completion": "complete",
+      "run_timestamp": "2026-03-27T11:01:00Z",
+      "model_used": "claude-sonnet-4-20250514",
+      "findings": [
+        {
+          "id": "c-001",
+          "display_ordinal": 1,
+          "severity": "ERROR",
+          "category": "dangling_reference",
+          "title": "PSA Section 9.4 reference may not exist",
+          "description": "The Loan Agreement Section 3.2 references 'Seller's indemnification obligations under Section 9.4 of the Purchase Agreement.' However, the PSA extraction did not identify a Section 9.4. This may be a mis-numbered reference or the section may have been renumbered in a later draft.",
+          "affected_entities": [
+            {"entity_type": "cross_reference", "entity_id": "xref-006", "document_id": "doc-loan", "section": "Section 3.2"},
+            {"entity_type": "document", "entity_id": "doc-psa", "document_id": "doc-psa", "section": "Section 9.4"}
+          ],
+          "confidence": "medium",
+          "source": "inferred",
+          "verified": false
+        },
+        {
+          "id": "c-002",
+          "display_ordinal": 2,
+          "severity": "WARNING",
+          "category": "contradictory_provision",
+          "title": "Inconsistent capital contribution references",
+          "description": "The JV Agreement Section 2.1 specifies an 80/20 capital split ($8M/$2M), but the Loan Agreement Section 2.1 describes a $15M facility. The total project cost appears to be $12M (PSA purchase price) plus development costs. The relationship between equity contributions ($10M total) and the loan ($15M) suggests possible over-leveraging or a mismatch in project budgets across documents.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-jv", "document_id": "doc-jv", "section": "Section 2.1"},
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 2.1"},
+            {"entity_type": "document", "entity_id": "doc-psa", "document_id": "doc-psa", "section": "Section 1.1"}
+          ],
+          "confidence": "low",
+          "source": "inferred",
+          "verified": false
+        }
+      ],
+      "summary": {
+        "total_findings": 2,
+        "by_severity": {"ERROR": 1, "WARNING": 1},
+        "key_findings": [
+          "Potential dangling cross-reference to PSA Section 9.4",
+          "Capital/financing structure may have inconsistencies across documents"
+        ]
+      },
+      "errors": []
+    },
+    "defined_terms": {
+      "analysis_type": "defined_terms",
+      "status": "completed",
+      "completion": "complete",
+      "run_timestamp": "2026-03-27T11:02:00Z",
+      "model_used": "claude-sonnet-4-20250514",
+      "findings": [
+        {
+          "id": "dt-001",
+          "display_ordinal": 1,
+          "severity": "WARNING",
+          "category": "orphaned_definition",
+          "title": "\"Permitted Transfer\" defined but never used outside Operating Agreement",
+          "description": "The term 'Permitted Transfer' is defined in the Operating Agreement Section 6.2 but is not referenced in any other document. If this term is intended to apply across the deal, it may need to be incorporated into the JV Agreement or the Loan Agreement's transfer restriction covenants.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-oa", "document_id": "doc-oa", "section": "Section 6.2"}
+          ],
+          "confidence": "medium",
+          "source": "inferred",
+          "verified": false
+        },
+        {
+          "id": "dt-002",
+          "display_ordinal": 2,
+          "severity": "INFO",
+          "category": "cross_document_dependency",
+          "title": "\"Property\" defined in PSA, used across 3 other documents",
+          "description": "The term 'Property' is defined in the PSA Section 1.1 and used in the Loan Agreement, Environmental Indemnity, and JV Agreement. All usages appear consistent with the PSA definition. Any amendment to the property description in the PSA could affect all three dependent documents.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-psa", "document_id": "doc-psa", "section": "Section 1.1"},
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": null},
+            {"entity_type": "document", "entity_id": "doc-enviro", "document_id": "doc-enviro", "section": null},
+            {"entity_type": "document", "entity_id": "doc-jv", "document_id": "doc-jv", "section": null}
+          ],
+          "confidence": "high",
+          "source": "explicit",
+          "verified": true
+        },
+        {
+          "id": "dt-003",
+          "display_ordinal": 3,
+          "severity": "WARNING",
+          "category": "conflicting_definition",
+          "title": "\"Event of Default\" may have different scope in Guaranty vs. Loan Agreement",
+          "description": "The Loan Agreement defines 'Event of Default' in Section 8.1 with specific triggers. The Guaranty references this term but the guaranty obligations are described as 'unconditional,' which could create tension if the Guarantor claims a narrower default definition applies. Recommend confirming the Guaranty explicitly incorporates the Loan Agreement's EOD definition.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 8.1"},
+            {"entity_type": "document", "entity_id": "doc-guaranty", "document_id": "doc-guaranty", "section": "Section 1.1"}
+          ],
+          "confidence": "low",
+          "source": "inferred",
+          "verified": false
+        }
+      ],
+      "summary": {
+        "total_findings": 3,
+        "by_severity": {"WARNING": 2, "INFO": 1},
+        "key_findings": [
+          "\"Permitted Transfer\" is orphaned — defined but unused outside OA",
+          "\"Property\" is a critical cross-document term defined in the PSA",
+          "\"Event of Default\" scope may differ between Loan and Guaranty"
+        ]
+      },
+      "errors": []
+    },
+    "conditions_precedent": {
+      "analysis_type": "conditions_precedent",
+      "status": "completed",
+      "completion": "complete",
+      "run_timestamp": "2026-03-27T11:03:00Z",
+      "model_used": "claude-sonnet-4-20250514",
+      "findings": [
+        {
+          "id": "cp-f-001",
+          "display_ordinal": 1,
+          "severity": "CRITICAL",
+          "category": "critical_path_item",
+          "title": "Phase I ESA delivery is on critical path — blocks loan closing",
+          "description": "The Loan Agreement Section 5.1(d) requires delivery of the Environmental Indemnity, which in turn requires a Phase I ESA (Environmental Indemnity Section 2.1). The Phase I ESA has not been delivered (status: pending). This is a gating item: the loan cannot close until both the Phase I and the Environmental Indemnity are executed and delivered.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-enviro", "document_id": "doc-enviro", "section": "Section 2.1"},
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 5.1(d)"}
+          ],
+          "confidence": "high",
+          "source": "explicit",
+          "verified": true
+        },
+        {
+          "id": "cp-f-002",
+          "display_ordinal": 2,
+          "severity": "WARNING",
+          "category": "parallel_group",
+          "title": "Three pending conditions may be satisfiable in parallel",
+          "description": "The title commitment (cp-003), Phase I ESA (cp-002), and PSA closing (cp-005) are all pending and do not depend on each other. These can be pursued simultaneously to minimize closing timeline.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-psa", "document_id": "doc-psa", "section": "Section 4.1(a)"},
+            {"entity_type": "document", "entity_id": "doc-enviro", "document_id": "doc-enviro", "section": "Section 2.1"},
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 5.1(e)"}
+          ],
+          "confidence": "medium",
+          "source": "inferred",
+          "verified": false
+        }
+      ],
+      "summary": {
+        "total_findings": 2,
+        "by_severity": {"CRITICAL": 1, "WARNING": 1},
+        "key_findings": [
+          "Phase I ESA is critical path — blocks loan closing",
+          "Three pending conditions can be pursued in parallel"
+        ]
+      },
+      "errors": []
+    },
+    "execution_sequence": {
+      "analysis_type": "execution_sequence",
+      "status": "completed",
+      "completion": "complete",
+      "run_timestamp": "2026-03-27T11:04:00Z",
+      "model_used": "claude-sonnet-4-20250514",
+      "findings": [
+        {
+          "id": "es-001",
+          "display_ordinal": 1,
+          "severity": "INFO",
+          "category": "signing_dependency",
+          "title": "Step 1: Execute JV Agreement and Operating Agreement",
+          "description": "The JV Agreement and Operating Agreement can be signed simultaneously as they have no external dependencies. The JV Agreement must be in place before financing is sought (cp-004, status: satisfied).",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-jv", "document_id": "doc-jv", "section": null},
+            {"entity_type": "document", "entity_id": "doc-oa", "document_id": "doc-oa", "section": null}
+          ],
+          "confidence": "high",
+          "source": "inferred",
+          "verified": true
+        },
+        {
+          "id": "es-002",
+          "display_ordinal": 2,
+          "severity": "INFO",
+          "category": "signing_dependency",
+          "title": "Step 2: Execute PSA (requires title commitment)",
+          "description": "The PSA closing requires title clearance (cp-003, pending). Once title is confirmed, PSA can close.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-psa", "document_id": "doc-psa", "section": null}
+          ],
+          "confidence": "high",
+          "source": "inferred",
+          "verified": true
+        },
+        {
+          "id": "es-003",
+          "display_ordinal": 3,
+          "severity": "INFO",
+          "category": "parallel_execution_window",
+          "title": "Step 3: Execute Guaranty and Environmental Indemnity (parallel)",
+          "description": "The Guaranty and Environmental Indemnity can be signed in parallel. Both must be delivered before loan closing. The Environmental Indemnity requires the Phase I ESA to be complete first.",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-guaranty", "document_id": "doc-guaranty", "section": null},
+            {"entity_type": "document", "entity_id": "doc-enviro", "document_id": "doc-enviro", "section": null}
+          ],
+          "confidence": "high",
+          "source": "inferred",
+          "verified": true
+        },
+        {
+          "id": "es-004",
+          "display_ordinal": 4,
+          "severity": "INFO",
+          "category": "gating_condition",
+          "title": "Step 4: Loan closing (requires Steps 1-3 complete)",
+          "description": "The Loan Agreement is the final document to close. It requires: (1) JV Agreement executed (satisfied), (2) Guaranty delivered (cp-001, satisfied), (3) Phase I ESA and Environmental Indemnity (cp-002, pending), (4) PSA closed (cp-005, pending).",
+          "affected_entities": [
+            {"entity_type": "document", "entity_id": "doc-loan", "document_id": "doc-loan", "section": "Section 5.1"}
+          ],
+          "confidence": "high",
+          "source": "explicit",
+          "verified": true
+        }
+      ],
+      "summary": {
+        "total_findings": 4,
+        "by_severity": {"INFO": 4},
+        "key_findings": [
+          "4-step execution sequence identified",
+          "JV + OA first, then PSA, then Guaranty + Environmental in parallel, then Loan closing last",
+          "Loan closing is the gating final step requiring all other conditions satisfied"
+        ]
+      },
+      "errors": []
+    }
+  },
+  "metadata": {
+    "last_full_analysis": "2026-03-27T11:04:00Z",
+    "documents_included": ["doc-jv", "doc-oa", "doc-loan", "doc-guaranty", "doc-psa", "doc-enviro"],
+    "engine_version": "1.0.0"
+  },
+  "staleness": {
+    "hierarchy": {
+      "is_stale": false,
+      "last_run": "2026-03-27T11:00:00Z",
+      "stale_reason": null,
+      "graph_hash_at_run": "sha256_synthetic_test_hash"
+    },
+    "conflicts": {
+      "is_stale": false,
+      "last_run": "2026-03-27T11:01:00Z",
+      "stale_reason": null,
+      "graph_hash_at_run": "sha256_synthetic_test_hash"
+    },
+    "defined_terms": {
+      "is_stale": false,
+      "last_run": "2026-03-27T11:02:00Z",
+      "stale_reason": null,
+      "graph_hash_at_run": "sha256_synthetic_test_hash"
+    },
+    "conditions_precedent": {
+      "is_stale": false,
+      "last_run": "2026-03-27T11:03:00Z",
+      "stale_reason": null,
+      "graph_hash_at_run": "sha256_synthetic_test_hash"
+    },
+    "execution_sequence": {
+      "is_stale": false,
+      "last_run": "2026-03-27T11:04:00Z",
+      "stale_reason": null,
+      "graph_hash_at_run": "sha256_synthetic_test_hash"
+    }
+  }
+}
