@@ -993,6 +993,244 @@
                 console.log(`--- DataAdapter tests complete: ${results.pass} passed, ${results.fail} failed ---`);
             })();
         }
+
+        // ============================================================
+        // AppState — Central shared state
+        // ============================================================
+        const AppState = {
+            activeView: 'graph',
+            layout: 'dagre',
+            filters: {
+                relationshipTypes: [],
+                documentTypes: [],
+                confidenceLevel: 'all',
+            },
+            searchQuery: '',
+            overlayEnabled: false,
+            edgeLabelsVisible: false,
+            selectedEntity: null,
+        };
+
+        // ============================================================
+        // GraphRenderer Class
+        // ============================================================
+        class GraphRenderer {
+            constructor(containerId, elements) {
+                this.containerId = containerId;
+                this.elements = elements;
+
+                // Check if Cytoscape is available (CDN may not have loaded)
+                if (typeof cytoscape === 'undefined') {
+                    console.warn('Cytoscape not loaded — graph rendering skipped');
+                    this.cy = null;
+                    return;
+                }
+
+                this.cy = cytoscape({
+                    container: document.getElementById(containerId),
+                    elements: [...elements.nodes, ...elements.edges],
+                    style: this._buildStylesheet(),
+                    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, animate: false },
+                    userZoomingEnabled: true,
+                    userPanningEnabled: true,
+                    boxSelectionEnabled: false,
+                    minZoom: 0.2,
+                    maxZoom: 4,
+                });
+
+                // Make accessible for debugging
+                window.cy = this.cy;
+            }
+
+            _buildStylesheet() {
+                return [
+                    // ── Base node style ──
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': function(ele) {
+                                const name = ele.data('label') || '';
+                                return name.length > 20 ? name.substring(0, 20) + '…' : name;
+                            },
+                            'width': function(ele) {
+                                return Math.min(80, Math.max(40, 40 + Math.sqrt(ele.degree()) * 10));
+                            },
+                            'height': function(ele) {
+                                return Math.min(80, Math.max(40, 40 + Math.sqrt(ele.degree()) * 10));
+                            },
+                            'font-size': '11px',
+                            'text-valign': 'bottom',
+                            'text-margin-y': 6,
+                            'text-wrap': 'ellipsis',
+                            'text-max-width': '100px',
+                            'border-width': 2,
+                            'border-color': '#e5e7eb',
+                            'color': '#1f2937',
+                        },
+                    },
+                    // ── Node categories ──
+                    { selector: '.category-primary', style: { 'background-color': '#3b82f6', shape: 'rectangle' } },
+                    { selector: '.category-ancillary', style: { 'background-color': '#8b5cf6', shape: 'ellipse' } },
+                    { selector: '.category-financial', style: { 'background-color': '#10b981', shape: 'diamond' } },
+                    { selector: '.category-corporate', style: { 'background-color': '#f59e0b', shape: 'hexagon' } },
+                    { selector: '.category-real-estate', style: { 'background-color': '#6366f1', shape: 'round-rectangle' } },
+                    { selector: '.category-regulatory', style: { 'background-color': '#ef4444', shape: 'triangle' } },
+                    { selector: '.category-closing', style: { 'background-color': '#64748b', shape: 'cut-rectangle' } },
+                    { selector: '.category-other', style: { 'background-color': '#94a3b8', shape: 'ellipse' } },
+
+                    // ── Base edge style ──
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'curve-style': 'bezier',
+                            'target-arrow-shape': 'triangle',
+                            'target-arrow-color': '#9ca3af',
+                            'line-color': '#9ca3af',
+                            'arrow-scale': 1.2,
+                            'label': '',
+                        },
+                    },
+                    // ── Edge colors by relationship family ──
+                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#ef4444', 'target-arrow-color': '#ef4444' } },
+                    { selector: '.references, .incorporates', style: { 'line-color': '#3b82f6', 'target-arrow-color': '#3b82f6' } },
+                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#10b981', 'target-arrow-color': '#10b981' } },
+                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#8b5cf6', 'target-arrow-color': '#8b5cf6' } },
+                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b' } },
+                    { selector: '.defines_terms_for', style: { 'line-color': '#14b8a6', 'target-arrow-color': '#14b8a6' } },
+
+                    // ── Confidence line styles ──
+                    { selector: '.high', style: { 'line-style': 'solid' } },
+                    { selector: '.medium', style: { 'line-style': 'dashed' } },
+                    { selector: '.low', style: { 'line-style': 'dotted' } },
+
+                    // ── Cycle edges ──
+                    { selector: '.cycle', style: { 'line-color': '#dc2626', 'target-arrow-color': '#dc2626', 'line-style': 'dashed', 'width': 3 } },
+
+                    // ── Visual state classes ──
+                    { selector: '.search-dimmed', style: { 'opacity': 0.2 } },
+                    { selector: '.highlighted', style: { 'border-width': 4, 'border-color': '#2563eb' } },
+                    { selector: '.neighbor-dimmed', style: { 'opacity': 0.15 } },
+                ];
+            }
+
+            applyLayout(layoutName) {
+                if (!this.cy) return;
+                AppState.layout = layoutName;
+                const layoutOpts = { animate: true, animationDuration: 500 };
+                if (layoutName === 'dagre') {
+                    Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80 });
+                } else if (layoutName === 'cola') {
+                    Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 40, edgeLength: 150 });
+                } else if (layoutName === 'breadthfirst') {
+                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 1.5 });
+                }
+                this.cy.layout(layoutOpts).run();
+            }
+
+            highlightNode(nodeId) {
+                if (!this.cy) return;
+                const node = this.cy.getElementById(nodeId);
+                if (!node || node.empty()) return;
+
+                const neighborhood = node.neighborhood().add(node);
+                this.cy.elements().addClass('neighbor-dimmed');
+                neighborhood.removeClass('neighbor-dimmed');
+                node.addClass('highlighted');
+                AppState.selectedEntity = { type: 'node', id: nodeId };
+            }
+
+            clearHighlight() {
+                if (!this.cy) return;
+                this.cy.elements().removeClass('neighbor-dimmed highlighted search-dimmed');
+                AppState.selectedEntity = null;
+            }
+
+            fitToScreen() {
+                if (!this.cy) return;
+                this.cy.fit(undefined, 50);
+            }
+
+            exportSVG() {
+                if (!this.cy) return null;
+                if (typeof this.cy.svg === 'function') {
+                    return this.cy.svg({ full: true });
+                }
+                return null;
+            }
+
+            // Stubs for section-05 (layouts/filtering)
+            filterByRelationshipType(types) { /* implemented in section-05 */ }
+            filterByDocumentType(types) { /* implemented in section-05 */ }
+            filterByConfidence(minLevel) { /* implemented in section-05 */ }
+            searchDocuments(query) { /* implemented in section-05 */ }
+        }
+
+        // ============================================================
+        // Initialize Application
+        // ============================================================
+        const dataAdapter = new DataAdapter(DEAL_GRAPH, DEAL_ANALYSIS);
+        const elements = dataAdapter.getCytoscapeElements();
+        const graphRenderer = new GraphRenderer('graph-container', elements);
+
+        // ============================================================
+        // GraphRenderer Tests (only run when Cytoscape is available)
+        // ============================================================
+        if (DEBUG && graphRenderer.cy) {
+            (function testGraphRenderer() {
+                const results = { pass: 0, fail: 0 };
+                const assert = (condition, msg) => {
+                    console.assert(condition, `[FAIL] ${msg}`);
+                    if (condition) { console.log(`[PASS] ${msg}`); results.pass++; }
+                    else { results.fail++; }
+                };
+
+                const cy = graphRenderer.cy;
+                const expected = dataAdapter.getCytoscapeElements();
+
+                assert(cy !== null, 'Cytoscape instance exists');
+                assert(document.getElementById('graph-container').children.length > 0, 'Graph container has children');
+                assert(cy.nodes().length === expected.nodes.length, `Node count: ${cy.nodes().length} === ${expected.nodes.length}`);
+                assert(cy.edges().length === expected.edges.length, `Edge count: ${cy.edges().length} === ${expected.edges.length}`);
+
+                // Zoom/pan/drag
+                assert(cy.userZoomingEnabled(), 'User zooming enabled');
+                assert(cy.userPanningEnabled(), 'User panning enabled');
+                if (cy.nodes().length > 0) {
+                    assert(cy.nodes().first().grabbable(), 'Nodes are grabbable');
+                }
+
+                // Node size bounds (only if nodes exist)
+                cy.nodes().forEach(n => {
+                    const w = n.width();
+                    assert(w >= 40 && w <= 80, `Node ${n.id()} width ${w} in [40,80]`);
+                });
+
+                // Edge arrows
+                cy.edges().forEach(e => {
+                    const arrow = e.style('target-arrow-shape');
+                    assert(arrow && arrow !== 'none', `Edge ${e.id()} has arrow`);
+                });
+
+                // Confidence line styles
+                const confStyles = { high: 'solid', medium: 'dashed', low: 'dotted' };
+                cy.edges().forEach(e => {
+                    const conf = e.data('confidence');
+                    if (conf && confStyles[conf]) {
+                        assert(e.style('line-style') === confStyles[conf],
+                            `Edge ${e.id()} confidence ${conf} → ${confStyles[conf]}`);
+                    }
+                });
+
+                // Label truncation
+                cy.nodes().forEach(n => {
+                    const label = n.style('label');
+                    assert(label.length <= 23, `Label "${label}" ≤ 23 chars`);
+                });
+
+                console.log(`--- GraphRenderer tests complete: ${results.pass} passed, ${results.fail} failed ---`);
+            })();
+        }
     </script>
 </body>
 </html>
