@@ -596,6 +596,403 @@
                 console.log(`--- Structure tests complete: ${results.pass} passed, ${results.fail} failed ---`);
             })();
         }
+
+        // ============================================================
+        // Data Parsing
+        // ============================================================
+        const DEAL_GRAPH = JSON.parse(document.getElementById('deal-graph-data').textContent);
+        const DEAL_ANALYSIS = JSON.parse(document.getElementById('deal-analysis-data').textContent);
+
+        // ============================================================
+        // Document Type Category Mapping
+        // ============================================================
+        const DOC_TYPE_CATEGORIES = {
+            'loan_agreement': 'category-primary',
+            'purchase_agreement': 'category-primary',
+            'credit_agreement': 'category-primary',
+            'lease_agreement': 'category-primary',
+            'guaranty': 'category-ancillary',
+            'indemnity_agreement': 'category-ancillary',
+            'estoppel_certificate': 'category-ancillary',
+            'environmental_indemnity': 'category-ancillary',
+            'comfort_letter': 'category-ancillary',
+            'promissory_note': 'category-financial',
+            'deed_of_trust': 'category-financial',
+            'security_agreement': 'category-financial',
+            'assignment': 'category-financial',
+            'operating_agreement': 'category-corporate',
+            'partnership_agreement': 'category-corporate',
+            'articles_of_incorporation': 'category-corporate',
+            'resolution': 'category-corporate',
+            'environmental_report': 'category-regulatory',
+            'title_commitment': 'category-regulatory',
+            'survey': 'category-regulatory',
+            'closing_statement': 'category-closing',
+            'settlement_statement': 'category-closing',
+        };
+        const DEFAULT_CATEGORY = 'category-other';
+
+        // ============================================================
+        // DataAdapter Class
+        // ============================================================
+        class DataAdapter {
+            constructor(dealGraph, dealAnalysis) {
+                this._graph = dealGraph;
+                this._analysis = dealAnalysis;
+
+                // Build document lookup
+                this._docMap = new Map();
+                const docs = dealGraph.documents || {};
+                for (const [id, doc] of Object.entries(docs)) {
+                    this._docMap.set(id, doc);
+                }
+
+                // Build relationship lookup
+                this._relationships = dealGraph.relationships || [];
+
+                // Build term lookup
+                this._termMap = new Map();
+                for (const term of (dealGraph.defined_terms || [])) {
+                    this._termMap.set(term.id, term);
+                }
+
+                // Detect cycles
+                this._cycleEdges = new Set();
+                this._detectCycles();
+
+                // Index findings with orphan pruning
+                this._findingsByEntity = new Map();
+                this._allFindings = [];
+                this._indexFindings();
+            }
+
+            _detectCycles() {
+                const adj = new Map();
+                const edgeMap = new Map(); // "src->tgt" -> [edge IDs]
+                for (const rel of this._relationships) {
+                    const src = rel.source_document_id;
+                    const tgt = rel.target_document_id;
+                    if (!adj.has(src)) adj.set(src, []);
+                    adj.get(src).push(tgt);
+                    const key = `${src}->${tgt}`;
+                    if (!edgeMap.has(key)) edgeMap.set(key, []);
+                    edgeMap.get(key).push(rel.id || key);
+                }
+
+                const UNVISITED = 0, IN_PROGRESS = 1, VISITED = 2;
+                const state = new Map();
+                for (const id of this._docMap.keys()) state.set(id, UNVISITED);
+
+                const path = [];
+                const self = this;
+
+                function dfs(node) {
+                    state.set(node, IN_PROGRESS);
+                    path.push(node);
+                    for (const neighbor of (adj.get(node) || [])) {
+                        if (state.get(neighbor) === IN_PROGRESS) {
+                            // Cycle found — mark all edges in the cycle path
+                            const cycleStart = path.indexOf(neighbor);
+                            for (let i = cycleStart; i < path.length; i++) {
+                                const from = path[i];
+                                const to = i + 1 < path.length ? path[i + 1] : neighbor;
+                                const eKey = `${from}->${to}`;
+                                for (const eid of (edgeMap.get(eKey) || [])) {
+                                    self._cycleEdges.add(eid);
+                                }
+                            }
+                        } else if (state.get(neighbor) === UNVISITED) {
+                            dfs(neighbor);
+                        }
+                    }
+                    path.pop();
+                    state.set(node, VISITED);
+                }
+
+                for (const id of this._docMap.keys()) {
+                    if (state.get(id) === UNVISITED) dfs(id);
+                }
+            }
+
+            _indexFindings() {
+                if (!this._analysis || !this._analysis.analyses) return;
+                const validDocIds = this._docMap;
+                const validRelIds = new Set(this._relationships.map(r => r.id));
+
+                for (const [, result] of Object.entries(this._analysis.analyses)) {
+                    for (const finding of (result.findings || [])) {
+                        let hasValidEntity = false;
+                        for (const entity of (finding.affected_entities || [])) {
+                            const eid = entity.entity_id;
+                            const isValid = validDocIds.has(eid) || validRelIds.has(eid);
+                            if (isValid) {
+                                hasValidEntity = true;
+                                if (!this._findingsByEntity.has(eid)) {
+                                    this._findingsByEntity.set(eid, []);
+                                }
+                                this._findingsByEntity.get(eid).push(finding);
+                            }
+                        }
+                        if (hasValidEntity) {
+                            this._allFindings.push(finding);
+                        }
+                    }
+                }
+            }
+
+            getCytoscapeElements() {
+                const nodes = [];
+                const edges = [];
+
+                // Count relationships per document
+                const relCount = new Map();
+                for (const rel of this._relationships) {
+                    relCount.set(rel.source_document_id, (relCount.get(rel.source_document_id) || 0) + 1);
+                    relCount.set(rel.target_document_id, (relCount.get(rel.target_document_id) || 0) + 1);
+                }
+
+                // Build nodes
+                for (const [id, doc] of this._docMap) {
+                    const category = DOC_TYPE_CATEGORIES[doc.document_type] || DEFAULT_CATEGORY;
+                    nodes.push({
+                        data: {
+                            id: id,
+                            label: doc.name,
+                            docType: doc.document_type,
+                            status: doc.status,
+                            relationshipCount: relCount.get(id) || 0,
+                        },
+                        classes: category,
+                    });
+                }
+
+                // Build edges with deterministic IDs
+                const edgeCounters = new Map();
+                for (const rel of this._relationships) {
+                    const baseKey = `${rel.source_document_id}::${rel.relationship_type}::${rel.target_document_id}`;
+                    const idx = edgeCounters.get(baseKey) || 0;
+                    edgeCounters.set(baseKey, idx + 1);
+                    const edgeId = `${baseKey}::${idx}`;
+
+                    const isCycle = this._cycleEdges.has(rel.id);
+                    let classes = `${rel.relationship_type} ${rel.confidence}`;
+                    if (isCycle) classes += ' cycle';
+
+                    edges.push({
+                        data: {
+                            id: edgeId,
+                            source: rel.source_document_id,
+                            target: rel.target_document_id,
+                            relType: rel.relationship_type,
+                            confidence: rel.confidence,
+                            description: rel.description,
+                            evidence: rel.evidence,
+                        },
+                        classes: classes,
+                    });
+                }
+
+                return { nodes, edges };
+            }
+
+            getDocumentDetails(docId) {
+                return this._docMap.get(docId) || null;
+            }
+
+            getFindingsForEntity(entityType, entityId) {
+                return this._findingsByEntity.get(entityId) || [];
+            }
+
+            getExecutionSequence() {
+                if (!this._analysis || !this._analysis.analyses) return [];
+                const execSeq = this._analysis.analyses.execution_sequence;
+                if (!execSeq || !execSeq.findings) return [];
+                return [...execSeq.findings].sort((a, b) => a.display_ordinal - b.display_ordinal);
+            }
+
+            getRelationshipTypes() {
+                const types = new Set();
+                for (const rel of this._relationships) {
+                    types.add(rel.relationship_type);
+                }
+                return [...types];
+            }
+
+            getDocumentTypes() {
+                const types = new Set();
+                for (const [, doc] of this._docMap) {
+                    types.add(doc.document_type);
+                }
+                return [...types];
+            }
+
+            getDefinedTermFlow(termId) {
+                const term = this._termMap.get(termId);
+                if (!term) return null;
+                return {
+                    definingDoc: term.defining_document_id,
+                    usingDocs: term.used_in_document_ids || [],
+                };
+            }
+
+            getFindingsSummary() {
+                const summary = { critical: 0, error: 0, warning: 0, info: 0 };
+                const seen = new Set();
+                for (const finding of this._allFindings) {
+                    if (seen.has(finding.id)) continue;
+                    seen.add(finding.id);
+                    const sev = (finding.severity || '').toUpperCase();
+                    if (sev === 'CRITICAL') summary.critical++;
+                    else if (sev === 'ERROR') summary.error++;
+                    else if (sev === 'WARNING') summary.warning++;
+                    else if (sev === 'INFO') summary.info++;
+                }
+                return summary;
+            }
+        }
+
+        // ============================================================
+        // DataAdapter Tests
+        // ============================================================
+        if (DEBUG) {
+            (function testDataAdapter() {
+                const results = { pass: 0, fail: 0 };
+                const assert = (condition, msg) => {
+                    console.assert(condition, `[FAIL] ${msg}`);
+                    if (condition) { console.log(`[PASS] ${msg}`); results.pass++; }
+                    else { results.fail++; }
+                };
+
+                // -- Test fixture --
+                const testGraph = {
+                    documents: {
+                        'doc-loan': { id: 'doc-loan', name: 'Loan Agreement', document_type: 'loan_agreement', status: 'executed', summary: 'test', key_provisions: [] },
+                        'doc-guaranty': { id: 'doc-guaranty', name: 'Guaranty', document_type: 'guaranty', status: 'executed', summary: 'test', key_provisions: [] },
+                        'doc-deed': { id: 'doc-deed', name: 'Deed of Trust', document_type: 'deed_of_trust', status: 'executed', summary: 'test', key_provisions: [] },
+                    },
+                    relationships: [
+                        { id: 'r1', source_document_id: 'doc-guaranty', target_document_id: 'doc-loan', relationship_type: 'guarantees', confidence: 'high', description: 'Guaranty guarantees Loan' },
+                        { id: 'r2', source_document_id: 'doc-deed', target_document_id: 'doc-loan', relationship_type: 'secures', confidence: 'medium', description: 'Deed secures Loan' },
+                        { id: 'r3', source_document_id: 'doc-loan', target_document_id: 'doc-guaranty', relationship_type: 'controls', confidence: 'high', description: 'Loan controls Guaranty' },
+                    ],
+                    defined_terms: [
+                        { id: 'term-1', term: 'Borrower', defining_document_id: 'doc-loan', used_in_document_ids: ['doc-guaranty', 'doc-deed'] },
+                    ],
+                };
+                const testAnalysis = {
+                    analyses: {
+                        conflicts: {
+                            findings: [
+                                { id: 'f1', severity: 'WARNING', category: 'dangling_reference', title: 'Test Warning', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-loan', document_id: 'doc-loan' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 1 },
+                                { id: 'f2', severity: 'ERROR', category: 'missing_document', title: 'Test Error', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-guaranty', document_id: 'doc-guaranty' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 2 },
+                            ],
+                        },
+                    },
+                };
+
+                const adapter = new DataAdapter(testGraph, testAnalysis);
+
+                // -- getCytoscapeElements --
+                const elements = adapter.getCytoscapeElements();
+                assert(Array.isArray(elements.nodes), 'getCytoscapeElements returns nodes array');
+                assert(Array.isArray(elements.edges), 'getCytoscapeElements returns edges array');
+                assert(elements.nodes.length === 3, 'Node count matches document count');
+                assert(elements.edges.length === 3, 'Edge count matches relationship count');
+
+                const loanNode = elements.nodes.find(n => n.data.id === 'doc-loan');
+                assert(loanNode && loanNode.data.label === 'Loan Agreement', 'Node has correct label');
+                assert(loanNode && loanNode.data.docType === 'loan_agreement', 'Node has docType');
+                assert(loanNode && loanNode.data.status === 'executed', 'Node has status');
+                assert(loanNode && loanNode.classes === 'category-primary', 'Node has category class');
+
+                const edge0 = elements.edges[0];
+                assert(edge0.data.id.includes('::'), 'Edge has deterministic ID format');
+                assert(edge0.data.source && edge0.data.target, 'Edge has source and target');
+                assert(edge0.classes.includes(edge0.data.relType), 'Edge classes include relationship type');
+                assert(edge0.classes.includes(edge0.data.confidence), 'Edge classes include confidence');
+
+                // Verify all edge sources/targets are valid doc IDs
+                const docIds = new Set(elements.nodes.map(n => n.data.id));
+                for (const e of elements.edges) {
+                    assert(docIds.has(e.data.source), `Edge source ${e.data.source} is valid doc ID`);
+                    assert(docIds.has(e.data.target), `Edge target ${e.data.target} is valid doc ID`);
+                }
+
+                // -- Query methods --
+                const details = adapter.getDocumentDetails('doc-loan');
+                assert(details && details.name === 'Loan Agreement', 'getDocumentDetails returns document');
+                assert(adapter.getDocumentDetails('nonexistent') === null, 'getDocumentDetails returns null for missing');
+
+                const relTypes = adapter.getRelationshipTypes();
+                assert(relTypes.includes('guarantees'), 'getRelationshipTypes includes guarantees');
+                assert(new Set(relTypes).size === relTypes.length, 'getRelationshipTypes is deduplicated');
+
+                const docTypes = adapter.getDocumentTypes();
+                assert(docTypes.includes('loan_agreement'), 'getDocumentTypes includes loan_agreement');
+
+                const findings = adapter.getFindingsForEntity('document', 'doc-loan');
+                assert(findings.length === 1, 'getFindingsForEntity returns matching findings');
+                assert(adapter.getFindingsForEntity('document', 'no-match').length === 0, 'getFindingsForEntity returns [] for no match');
+
+                const summary = adapter.getFindingsSummary();
+                assert(summary.warning === 1, 'getFindingsSummary counts warnings');
+                assert(summary.error === 1, 'getFindingsSummary counts errors');
+                assert(summary.critical === 0, 'getFindingsSummary zero critical');
+                assert(summary.info === 0, 'getFindingsSummary zero info');
+
+                const termFlow = adapter.getDefinedTermFlow('term-1');
+                assert(termFlow && termFlow.definingDoc === 'doc-loan', 'getDefinedTermFlow returns defining doc');
+                assert(termFlow && termFlow.usingDocs.length === 2, 'getDefinedTermFlow returns using docs');
+
+                // -- Null analysis --
+                const nullAdapter = new DataAdapter(testGraph, null);
+                assert(nullAdapter.getFindingsForEntity('document', 'doc-loan').length === 0, 'Null analysis: getFindingsForEntity returns []');
+                assert(nullAdapter.getFindingsSummary().critical === 0, 'Null analysis: summary all zeros');
+                assert(nullAdapter.getExecutionSequence().length === 0, 'Null analysis: getExecutionSequence returns []');
+
+                // -- Empty documents --
+                const emptyAdapter = new DataAdapter({ documents: {}, relationships: [] }, null);
+                const emptyElements = emptyAdapter.getCytoscapeElements();
+                assert(emptyElements.nodes.length === 0, 'Empty: no nodes');
+                assert(emptyElements.edges.length === 0, 'Empty: no edges');
+
+                // -- Orphaned findings --
+                const orphanAnalysis = {
+                    analyses: {
+                        conflicts: {
+                            findings: [
+                                { id: 'f-valid', severity: 'ERROR', category: 'test', title: 'Valid', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-loan', document_id: 'doc-loan' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 1 },
+                                { id: 'f-orphan', severity: 'CRITICAL', category: 'test', title: 'Orphan', description: 'test', affected_entities: [{ entity_type: 'document', entity_id: 'doc-phantom', document_id: 'doc-phantom' }], confidence: 'high', source: 'explicit', verified: true, display_ordinal: 2 },
+                            ],
+                        },
+                    },
+                };
+                const orphanAdapter = new DataAdapter(testGraph, orphanAnalysis);
+                assert(orphanAdapter.getFindingsSummary().critical === 0, 'Orphaned findings pruned from summary');
+                assert(orphanAdapter.getFindingsForEntity('document', 'doc-phantom').length === 0, 'Orphaned entity returns no findings');
+
+                // -- Cycle detection --
+                const cycleGraph = {
+                    documents: {
+                        'a': { id: 'a', name: 'A', document_type: 'other', status: 'executed' },
+                        'b': { id: 'b', name: 'B', document_type: 'other', status: 'executed' },
+                        'c': { id: 'c', name: 'C', document_type: 'other', status: 'executed' },
+                    },
+                    relationships: [
+                        { id: 'cr1', source_document_id: 'a', target_document_id: 'b', relationship_type: 'references', confidence: 'high', description: 'A->B' },
+                        { id: 'cr2', source_document_id: 'b', target_document_id: 'c', relationship_type: 'references', confidence: 'high', description: 'B->C' },
+                        { id: 'cr3', source_document_id: 'c', target_document_id: 'a', relationship_type: 'references', confidence: 'high', description: 'C->A' },
+                    ],
+                    defined_terms: [],
+                };
+                const cycleAdapter = new DataAdapter(cycleGraph, null);
+                const cycleElements = cycleAdapter.getCytoscapeElements();
+                const cycleEdges = cycleElements.edges.filter(e => e.classes.includes('cycle'));
+                assert(cycleEdges.length > 0, 'Cycle edges detected and marked with cycle class');
+
+                console.log(`--- DataAdapter tests complete: ${results.pass} passed, ${results.fail} failed ---`);
+            })();
+        }
     </script>
 </body>
 </html>
