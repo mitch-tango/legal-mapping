@@ -1,0 +1,849 @@
+{
+  "schema_version": "1.0.0",
+  "deal": {
+    "name": "Acme Industrial Park Acquisition",
+    "deal_type": "acquisition",
+    "primary_parties": ["p-acme", "p-summit"],
+    "closing_date": "2026-04-15",
+    "status": "active",
+    "notes": "Test deal — synthetic data for codebase validation. No real parties, terms, or obligations.",
+    "created_at": "2026-03-27T10:00:00Z",
+    "updated_at": "2026-03-27T10:00:00Z"
+  },
+  "parties": {
+    "p-acme": {
+      "id": "p-acme",
+      "canonical_name": "Acme Development LLC",
+      "aliases": ["Acme", "Acme Dev"],
+      "raw_names": ["ACME DEVELOPMENT, LLC", "Acme Development LLC"],
+      "entity_type": "LLC",
+      "jurisdiction": "Delaware",
+      "deal_roles": ["Buyer", "Borrower", "Developer"],
+      "confidence": "high"
+    },
+    "p-summit": {
+      "id": "p-summit",
+      "canonical_name": "Summit Capital Partners",
+      "aliases": ["Summit", "SCP"],
+      "raw_names": ["Summit Capital Partners, Inc.", "SUMMIT CAPITAL PARTNERS"],
+      "entity_type": "Corporation",
+      "jurisdiction": "New York",
+      "deal_roles": ["JV Partner", "Managing Member"],
+      "confidence": "high"
+    },
+    "p-firstbank": {
+      "id": "p-firstbank",
+      "canonical_name": "First Metro Bank",
+      "aliases": ["FMB", "First Metro"],
+      "raw_names": ["First Metro Bank, N.A."],
+      "entity_type": "Corporation",
+      "jurisdiction": "New York",
+      "deal_roles": ["Lender"],
+      "confidence": "high"
+    },
+    "p-greenfield": {
+      "id": "p-greenfield",
+      "canonical_name": "Greenfield Properties Inc.",
+      "aliases": ["Greenfield"],
+      "raw_names": ["GREENFIELD PROPERTIES, INC."],
+      "entity_type": "Corporation",
+      "jurisdiction": "California",
+      "deal_roles": ["Seller", "Ground Lessor"],
+      "confidence": "high"
+    },
+    "p-enviro": {
+      "id": "p-enviro",
+      "canonical_name": "CleanSite Environmental Services",
+      "aliases": ["CleanSite"],
+      "raw_names": ["CleanSite Environmental Services LLC"],
+      "entity_type": "LLC",
+      "jurisdiction": "California",
+      "deal_roles": ["Environmental Consultant"],
+      "confidence": "medium"
+    }
+  },
+  "documents": {
+    "doc-jv": {
+      "id": "doc-jv",
+      "name": "Joint Venture Agreement",
+      "document_type": "jv_agreement",
+      "parties": [
+        {"party_id": "p-acme", "role_in_document": "Developer Member"},
+        {"party_id": "p-summit", "role_in_document": "Capital Member"}
+      ],
+      "execution_date_raw": "March 1, 2026",
+      "execution_date_iso": "2026-03-01",
+      "status": "executed",
+      "source_file_path": "deals/test-acme-acquisition/documents/jv-agreement.pdf",
+      "file_hash": "sha256_test_jv_001",
+      "key_provisions": [
+        {
+          "section_reference": "2.1",
+          "title": "Capital Contributions",
+          "summary": "Acme contributes $2M; Summit contributes $8M for 80/20 split",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "3.1",
+          "title": "Management Authority",
+          "summary": "Summit serves as Managing Member with day-to-day operational control",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "5.2",
+          "title": "Major Decisions",
+          "summary": "Financing, sale, and material contracts require unanimous member consent",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "7.1",
+          "title": "Distribution Waterfall",
+          "summary": "Return of capital, 8% preferred return to Summit, then 50/50 split",
+          "provision_type": "covenant"
+        }
+      ],
+      "summary": "Joint venture between Acme Development and Summit Capital for acquisition and development of Acme Industrial Park. Summit is capital partner (80%); Acme is developer (20%).",
+      "obligations": [
+        "Acme to manage construction and development",
+        "Summit to fund capital calls within 10 business days",
+        "Both members to approve annual budgets",
+        "Quarterly financial reporting"
+      ],
+      "extraction": {
+        "extracted_at": "2026-03-27T10:00:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_test_prompt_v1",
+        "processing_time_ms": 5200,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-oa": {
+      "id": "doc-oa",
+      "name": "Operating Agreement",
+      "document_type": "operating_agreement",
+      "parties": [
+        {"party_id": "p-acme", "role_in_document": "Member"},
+        {"party_id": "p-summit", "role_in_document": "Managing Member"}
+      ],
+      "execution_date_raw": "March 1, 2026",
+      "execution_date_iso": "2026-03-01",
+      "status": "executed",
+      "source_file_path": "deals/test-acme-acquisition/documents/operating-agreement.pdf",
+      "file_hash": "sha256_test_oa_001",
+      "key_provisions": [
+        {
+          "section_reference": "4.1",
+          "title": "Manager Powers",
+          "summary": "Managing Member authorized to execute documents and manage day-to-day operations",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "6.1",
+          "title": "Transfer Restrictions",
+          "summary": "No member may transfer interests without other member's written consent",
+          "provision_type": "restriction"
+        }
+      ],
+      "summary": "Operating agreement for Acme Industrial Park LLC, the JV entity. Governs internal management, voting, and transfer restrictions.",
+      "obligations": [
+        "Maintain books and records",
+        "File annual reports",
+        "Provide K-1s within 90 days of year-end"
+      ],
+      "extraction": {
+        "extracted_at": "2026-03-27T10:01:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_test_prompt_v1",
+        "processing_time_ms": 3800,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-loan": {
+      "id": "doc-loan",
+      "name": "Loan Agreement",
+      "document_type": "loan_agreement",
+      "parties": [
+        {"party_id": "p-acme", "role_in_document": "Borrower"},
+        {"party_id": "p-firstbank", "role_in_document": "Lender"}
+      ],
+      "execution_date_raw": "March 10, 2026",
+      "execution_date_iso": "2026-03-10",
+      "status": "executed",
+      "source_file_path": "deals/test-acme-acquisition/documents/loan-agreement.pdf",
+      "file_hash": "sha256_test_loan_001",
+      "key_provisions": [
+        {
+          "section_reference": "2.1",
+          "title": "Loan Amount",
+          "summary": "Construction loan facility of $15,000,000",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "3.1",
+          "title": "Interest Rate",
+          "summary": "SOFR + 2.75%, adjusting quarterly",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "5.1",
+          "title": "Conditions to Closing",
+          "summary": "Delivery of Guaranty, Environmental Report, Title Policy, and executed Ground Lease",
+          "provision_type": "condition"
+        },
+        {
+          "section_reference": "8.1",
+          "title": "Events of Default",
+          "summary": "Failure to pay, covenant breach, material adverse change, environmental contamination",
+          "provision_type": "default"
+        }
+      ],
+      "summary": "Senior construction loan of $15M from First Metro Bank to Acme Development for acquisition and development of the industrial park.",
+      "obligations": [
+        "Monthly interest payments during construction",
+        "Submit monthly draw requests with contractor certifications",
+        "Maintain minimum debt service coverage ratio of 1.25x",
+        "Provide quarterly financial statements",
+        "Obtain Lender consent for any change orders over $500K"
+      ],
+      "extraction": {
+        "extracted_at": "2026-03-27T10:02:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_test_prompt_v1",
+        "processing_time_ms": 6100,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-guaranty": {
+      "id": "doc-guaranty",
+      "name": "Guaranty of Payment",
+      "document_type": "guaranty",
+      "parties": [
+        {"party_id": "p-summit", "role_in_document": "Guarantor"},
+        {"party_id": "p-firstbank", "role_in_document": "Lender"}
+      ],
+      "execution_date_raw": "March 10, 2026",
+      "execution_date_iso": "2026-03-10",
+      "status": "executed",
+      "source_file_path": "deals/test-acme-acquisition/documents/guaranty.pdf",
+      "file_hash": "sha256_test_guaranty_001",
+      "key_provisions": [
+        {
+          "section_reference": "1.1",
+          "title": "Guaranty of Payment",
+          "summary": "Unconditional guaranty of all obligations under the Loan Agreement up to $15M",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "2.1",
+          "title": "Net Worth Covenant",
+          "summary": "Guarantor must maintain minimum net worth of $25M",
+          "provision_type": "covenant"
+        }
+      ],
+      "summary": "Summit Capital unconditionally guarantees all obligations of Acme Development under the Loan Agreement.",
+      "obligations": [
+        "Guarantee all loan obligations",
+        "Maintain minimum net worth of $25M",
+        "Provide annual financial statements to Lender"
+      ],
+      "extraction": {
+        "extracted_at": "2026-03-27T10:03:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_test_prompt_v1",
+        "processing_time_ms": 2900,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-psa": {
+      "id": "doc-psa",
+      "name": "Purchase and Sale Agreement",
+      "document_type": "purchase_sale_agreement",
+      "parties": [
+        {"party_id": "p-acme", "role_in_document": "Buyer"},
+        {"party_id": "p-greenfield", "role_in_document": "Seller"}
+      ],
+      "execution_date_raw": "February 15, 2026",
+      "execution_date_iso": "2026-02-15",
+      "status": "executed",
+      "source_file_path": "deals/test-acme-acquisition/documents/psa.pdf",
+      "file_hash": "sha256_test_psa_001",
+      "key_provisions": [
+        {
+          "section_reference": "1.1",
+          "title": "Purchase Price",
+          "summary": "Purchase price of $12,000,000 for the Property",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "3.1",
+          "title": "Due Diligence Period",
+          "summary": "45-day due diligence period from Effective Date",
+          "provision_type": "condition"
+        },
+        {
+          "section_reference": "4.1",
+          "title": "Closing Conditions",
+          "summary": "Title clearance, environmental clearance, financing commitment",
+          "provision_type": "condition"
+        },
+        {
+          "section_reference": "6.1",
+          "title": "Seller Representations",
+          "summary": "No pending litigation, no environmental violations known, clear title",
+          "provision_type": "representation"
+        }
+      ],
+      "summary": "Agreement for Acme to purchase the industrial park property from Greenfield Properties for $12M, subject to due diligence and financing conditions.",
+      "obligations": [
+        "Buyer to deposit $500K earnest money",
+        "Seller to provide access for inspections",
+        "Seller to deliver clear title at closing",
+        "Buyer to close within 30 days of due diligence expiration"
+      ],
+      "extraction": {
+        "extracted_at": "2026-03-27T10:04:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_test_prompt_v1",
+        "processing_time_ms": 5500,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    },
+    "doc-enviro": {
+      "id": "doc-enviro",
+      "name": "Environmental Indemnity Agreement",
+      "document_type": "environmental_indemnity",
+      "parties": [
+        {"party_id": "p-acme", "role_in_document": "Indemnitor"},
+        {"party_id": "p-firstbank", "role_in_document": "Indemnitee"}
+      ],
+      "execution_date_raw": "March 10, 2026",
+      "execution_date_iso": "2026-03-10",
+      "status": "executed",
+      "source_file_path": "deals/test-acme-acquisition/documents/environmental-indemnity.pdf",
+      "file_hash": "sha256_test_enviro_001",
+      "key_provisions": [
+        {
+          "section_reference": "1.1",
+          "title": "Indemnification Scope",
+          "summary": "Indemnitor indemnifies Lender against all environmental claims and remediation costs",
+          "provision_type": "covenant"
+        },
+        {
+          "section_reference": "2.1",
+          "title": "Phase I Requirement",
+          "summary": "Borrower must deliver Phase I ESA prior to loan closing",
+          "provision_type": "condition"
+        }
+      ],
+      "summary": "Environmental indemnity from Acme to First Metro Bank covering all environmental liabilities related to the industrial park property.",
+      "obligations": [
+        "Indemnify Lender for all environmental claims",
+        "Deliver Phase I ESA prior to closing",
+        "Notify Lender of any environmental issues within 5 business days",
+        "Comply with all environmental laws"
+      ],
+      "extraction": {
+        "extracted_at": "2026-03-27T10:05:00Z",
+        "model": "claude-sonnet-4-20250514",
+        "model_version": "20250514",
+        "temperature": 0.0,
+        "prompt_version": "sha256_test_prompt_v1",
+        "processing_time_ms": 2400,
+        "pdf_has_text_layer": true
+      },
+      "ai_original_values": null,
+      "is_manual": false
+    }
+  },
+  "relationships": [
+    {
+      "id": "rel-001",
+      "source_document_id": "doc-jv",
+      "target_document_id": "doc-oa",
+      "relationship_type": "controls",
+      "source_reference": "Section 1.2",
+      "evidence": {
+        "quote": "In the event of any conflict between this Agreement and the Operating Agreement, this Agreement shall control.",
+        "page": 3
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "JV Agreement controls the Operating Agreement on all conflicting provisions",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-002",
+      "source_document_id": "doc-loan",
+      "target_document_id": "doc-jv",
+      "relationship_type": "controls",
+      "source_reference": "Section 9.1",
+      "evidence": {
+        "quote": "Borrower shall not amend, modify, or terminate the JV Agreement without Lender's prior written consent.",
+        "page": 15
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement restricts and controls amendments to the JV Agreement",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-003",
+      "source_document_id": "doc-guaranty",
+      "target_document_id": "doc-loan",
+      "relationship_type": "guarantees",
+      "source_reference": "Section 1.1",
+      "evidence": {
+        "quote": "Guarantor hereby unconditionally and irrevocably guarantees the full and punctual payment of all Obligations.",
+        "page": 1
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Guaranty guarantees all obligations under the Loan Agreement",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-004",
+      "source_document_id": "doc-loan",
+      "target_document_id": "doc-guaranty",
+      "relationship_type": "references",
+      "source_reference": "Section 5.1(b)",
+      "evidence": {
+        "quote": "Delivery of the Guaranty executed by Summit Capital Partners",
+        "page": 8
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement references the Guaranty as a condition to closing",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-005",
+      "source_document_id": "doc-loan",
+      "target_document_id": "doc-psa",
+      "relationship_type": "references",
+      "source_reference": "Section 2.3",
+      "evidence": {
+        "quote": "The Property as described in that certain Purchase and Sale Agreement dated February 15, 2026",
+        "page": 4
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement references the PSA for property description and purchase terms",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-006",
+      "source_document_id": "doc-enviro",
+      "target_document_id": "doc-loan",
+      "relationship_type": "indemnifies",
+      "source_reference": "Section 1.1",
+      "evidence": {
+        "quote": "Indemnitor shall indemnify and hold harmless the Indemnitee from all Environmental Claims arising from the Property.",
+        "page": 2
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Environmental Indemnity provides indemnification for environmental claims related to the Loan",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-007",
+      "source_document_id": "doc-loan",
+      "target_document_id": "doc-enviro",
+      "relationship_type": "references",
+      "source_reference": "Section 5.1(d)",
+      "evidence": {
+        "quote": "Delivery of the Environmental Indemnity Agreement executed by Borrower",
+        "page": 9
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement references the Environmental Indemnity as a closing condition",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-008",
+      "source_document_id": "doc-psa",
+      "target_document_id": "doc-jv",
+      "relationship_type": "triggers",
+      "source_reference": "Section 4.1",
+      "evidence": {
+        "quote": "Closing of the purchase shall be contingent upon execution of all JV formation documents.",
+        "page": 6
+      },
+      "confidence": "medium",
+      "needs_review": true,
+      "is_manual": false,
+      "description": "PSA closing triggers the requirement for JV Agreement execution",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-009",
+      "source_document_id": "doc-jv",
+      "target_document_id": "doc-loan",
+      "relationship_type": "references",
+      "source_reference": "Section 5.2(a)",
+      "evidence": {
+        "quote": "Financing of the Project shall be obtained pursuant to a loan agreement with an institutional lender.",
+        "page": 10
+      },
+      "confidence": "medium",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "JV Agreement references the Loan Agreement for project financing",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-010",
+      "source_document_id": "doc-loan",
+      "target_document_id": "doc-oa",
+      "relationship_type": "restricts",
+      "source_reference": "Section 9.2",
+      "evidence": {
+        "quote": "Borrower shall not amend the Operating Agreement in a manner that would materially affect Lender's security interest.",
+        "page": 16
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "Loan Agreement restricts amendments to the Operating Agreement",
+      "ai_original_values": null,
+      "extraction": null
+    },
+    {
+      "id": "rel-011",
+      "source_document_id": "doc-psa",
+      "target_document_id": "doc-enviro",
+      "relationship_type": "conditions_precedent",
+      "source_reference": "Section 4.1(c)",
+      "evidence": {
+        "quote": "Buyer must obtain a satisfactory Phase I Environmental Site Assessment prior to closing.",
+        "page": 7
+      },
+      "confidence": "high",
+      "needs_review": false,
+      "is_manual": false,
+      "description": "PSA requires environmental clearance as a condition to closing",
+      "ai_original_values": null,
+      "extraction": null
+    }
+  ],
+  "defined_terms": [
+    {
+      "id": "term-001",
+      "term": "Borrower",
+      "defining_document_id": "doc-loan",
+      "section_reference": "Preamble",
+      "definition_snippet": "Acme Development LLC, a Delaware limited liability company (\"Borrower\")",
+      "used_in_document_ids": ["doc-guaranty", "doc-enviro"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-002",
+      "term": "Guarantor",
+      "defining_document_id": "doc-guaranty",
+      "section_reference": "Preamble",
+      "definition_snippet": "Summit Capital Partners, Inc. (\"Guarantor\")",
+      "used_in_document_ids": ["doc-loan"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-003",
+      "term": "Property",
+      "defining_document_id": "doc-psa",
+      "section_reference": "Section 1.1",
+      "definition_snippet": "The real property located at 500 Industrial Boulevard, Oakland, California, as more particularly described in Exhibit A",
+      "used_in_document_ids": ["doc-loan", "doc-enviro", "doc-jv"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-004",
+      "term": "Loan",
+      "defining_document_id": "doc-loan",
+      "section_reference": "Section 2.1",
+      "definition_snippet": "The construction loan facility in the maximum principal amount of Fifteen Million Dollars ($15,000,000)",
+      "used_in_document_ids": ["doc-guaranty", "doc-enviro"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-005",
+      "term": "Capital Account",
+      "defining_document_id": "doc-jv",
+      "section_reference": "Section 2.3",
+      "definition_snippet": "Each Member's Capital Account shall be maintained in accordance with Treasury Regulation Section 1.704-1(b)(2)(iv)",
+      "used_in_document_ids": ["doc-oa"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-006",
+      "term": "Event of Default",
+      "defining_document_id": "doc-loan",
+      "section_reference": "Section 8.1",
+      "definition_snippet": "Any of the following shall constitute an Event of Default: (a) failure to pay; (b) breach of covenant; (c) material adverse change",
+      "used_in_document_ids": ["doc-guaranty"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-007",
+      "term": "Managing Member",
+      "defining_document_id": "doc-oa",
+      "section_reference": "Section 1.1",
+      "definition_snippet": "Summit Capital Partners, Inc., in its capacity as managing member of the Company",
+      "used_in_document_ids": ["doc-jv"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-008",
+      "term": "Environmental Hazard",
+      "defining_document_id": "doc-enviro",
+      "section_reference": "Section 1.2",
+      "definition_snippet": "Any substance, chemical, waste, or material regulated under any Environmental Law",
+      "used_in_document_ids": ["doc-loan"],
+      "confidence": "medium"
+    },
+    {
+      "id": "term-009",
+      "term": "Major Decision",
+      "defining_document_id": "doc-jv",
+      "section_reference": "Section 5.2",
+      "definition_snippet": "Financing, refinancing, sale, or disposition of all or substantially all of the Property, or any contract exceeding $500,000",
+      "used_in_document_ids": ["doc-oa"],
+      "confidence": "high"
+    },
+    {
+      "id": "term-010",
+      "term": "Permitted Transfer",
+      "defining_document_id": "doc-oa",
+      "section_reference": "Section 6.2",
+      "definition_snippet": "A transfer to an Affiliate of the transferring Member, provided such Affiliate assumes all obligations",
+      "used_in_document_ids": [],
+      "confidence": "medium"
+    }
+  ],
+  "cross_references": [
+    {
+      "id": "xref-001",
+      "source_document_id": "doc-guaranty",
+      "source_section": "Section 1.1",
+      "target_document_id": "doc-loan",
+      "target_section": "Section 2.1",
+      "reference_text": "all Obligations as defined in Section 2.1 of the Loan Agreement",
+      "evidence": null,
+      "confidence": "high",
+      "needs_review": false
+    },
+    {
+      "id": "xref-002",
+      "source_document_id": "doc-loan",
+      "source_section": "Section 5.1(b)",
+      "target_document_id": "doc-guaranty",
+      "target_section": "Section 1.1",
+      "reference_text": "Delivery of the Guaranty duly executed by Guarantor",
+      "evidence": null,
+      "confidence": "high",
+      "needs_review": false
+    },
+    {
+      "id": "xref-003",
+      "source_document_id": "doc-loan",
+      "source_section": "Section 9.1",
+      "target_document_id": "doc-jv",
+      "target_section": null,
+      "reference_text": "that certain Joint Venture Agreement dated as of March 1, 2026",
+      "evidence": null,
+      "confidence": "high",
+      "needs_review": false
+    },
+    {
+      "id": "xref-004",
+      "source_document_id": "doc-enviro",
+      "source_section": "Section 1.1",
+      "target_document_id": "doc-loan",
+      "target_section": "Section 8.1",
+      "reference_text": "Event of Default as defined in Section 8.1 of the Loan Agreement",
+      "evidence": null,
+      "confidence": "high",
+      "needs_review": false
+    },
+    {
+      "id": "xref-005",
+      "source_document_id": "doc-jv",
+      "source_section": "Section 5.2(a)",
+      "target_document_id": "doc-loan",
+      "target_section": null,
+      "reference_text": "the construction loan facility obtained from First Metro Bank",
+      "evidence": null,
+      "confidence": "medium",
+      "needs_review": true
+    },
+    {
+      "id": "xref-006",
+      "source_document_id": "doc-loan",
+      "source_section": "Section 3.2",
+      "target_document_id": "doc-psa",
+      "target_section": "Section 9.4",
+      "reference_text": "Seller's indemnification obligations under Section 9.4 of the Purchase Agreement",
+      "evidence": null,
+      "confidence": "medium",
+      "needs_review": true
+    }
+  ],
+  "conditions_precedent": [
+    {
+      "id": "cp-001",
+      "description": "Executed Guaranty must be delivered to Lender prior to loan closing",
+      "source_document_id": "doc-loan",
+      "source_section": "Section 5.1(b)",
+      "required_document_id": "doc-guaranty",
+      "enables_document_id": "doc-loan",
+      "status": "satisfied",
+      "confidence": "high"
+    },
+    {
+      "id": "cp-002",
+      "description": "Phase I Environmental Site Assessment must be delivered and approved",
+      "source_document_id": "doc-loan",
+      "source_section": "Section 5.1(d)",
+      "required_document_id": "doc-enviro",
+      "enables_document_id": "doc-loan",
+      "status": "pending",
+      "confidence": "high"
+    },
+    {
+      "id": "cp-003",
+      "description": "Title insurance commitment must be delivered showing clear title",
+      "source_document_id": "doc-psa",
+      "source_section": "Section 4.1(a)",
+      "required_document_id": null,
+      "enables_document_id": "doc-psa",
+      "status": "pending",
+      "confidence": "high"
+    },
+    {
+      "id": "cp-004",
+      "description": "JV Agreement must be executed before loan application is submitted",
+      "source_document_id": "doc-jv",
+      "source_section": "Section 5.2(a)",
+      "required_document_id": "doc-jv",
+      "enables_document_id": "doc-loan",
+      "status": "satisfied",
+      "confidence": "high"
+    },
+    {
+      "id": "cp-005",
+      "description": "PSA closing must occur simultaneously with or prior to loan closing",
+      "source_document_id": "doc-loan",
+      "source_section": "Section 5.1(e)",
+      "required_document_id": "doc-psa",
+      "enables_document_id": "doc-loan",
+      "status": "pending",
+      "confidence": "medium"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "ann-001",
+      "entity_type": "relationship",
+      "entity_id": "rel-008",
+      "note": "Verify: does PSA truly trigger JV execution, or is it the other way around?",
+      "flagged": true,
+      "created_at": "2026-03-27T10:30:00Z",
+      "updated_at": "2026-03-27T10:30:00Z"
+    },
+    {
+      "id": "ann-002",
+      "entity_type": "cross_reference",
+      "entity_id": "xref-006",
+      "note": "Section 9.4 may not exist in the PSA — verify section numbering",
+      "flagged": true,
+      "created_at": "2026-03-27T10:31:00Z",
+      "updated_at": "2026-03-27T10:31:00Z"
+    }
+  ],
+  "extraction_log": [
+    {
+      "id": "ev-001",
+      "document_id": "doc-jv",
+      "action": "initial",
+      "timestamp": "2026-03-27T10:00:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": "Synthetic test data — not extracted from real document"
+    },
+    {
+      "id": "ev-002",
+      "document_id": "doc-oa",
+      "action": "initial",
+      "timestamp": "2026-03-27T10:01:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": "Synthetic test data"
+    },
+    {
+      "id": "ev-003",
+      "document_id": "doc-loan",
+      "action": "initial",
+      "timestamp": "2026-03-27T10:02:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": "Synthetic test data"
+    },
+    {
+      "id": "ev-004",
+      "document_id": "doc-guaranty",
+      "action": "initial",
+      "timestamp": "2026-03-27T10:03:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": "Synthetic test data"
+    },
+    {
+      "id": "ev-005",
+      "document_id": "doc-psa",
+      "action": "initial",
+      "timestamp": "2026-03-27T10:04:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": "Synthetic test data"
+    },
+    {
+      "id": "ev-006",
+      "document_id": "doc-enviro",
+      "action": "initial",
+      "timestamp": "2026-03-27T10:05:00Z",
+      "model": "claude-sonnet-4-20250514",
+      "notes": "Synthetic test data"
+    }
+  ]
+}
