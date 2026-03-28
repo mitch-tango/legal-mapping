@@ -1600,8 +1600,14 @@
     <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-dagre')"></script>
 
-    <!-- 4. Cytoscape-cola - Force-directed layout for Cytoscape -->
+    <!-- 4a. WebCola - Constraint-based layout engine (required by cytoscape-cola) -->
+    <script src="https://unpkg.com/webcola@3.4.0/WebCola/cola.min.js"
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('webcola')"></script>
+
+    <!-- 4b. Cytoscape-cola - Cola adapter for Cytoscape -->
     <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"
+            crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-cola')"></script>
 
     <!-- 5. jsPDF - PDF generation -->
