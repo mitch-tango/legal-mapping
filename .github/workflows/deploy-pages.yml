@@ -1,0 +1,32 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build index.html from template + deal data
+        run: |
+          python3 scripts/build-pages.py \
+            --template deal-visualization.html \
+            --graph deals/test-acme-acquisition/deal-graph.json \
+            --analysis deals/test-acme-acquisition/deal-analysis.json \
+            --output index.html
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: false
+          exclude_assets: '.git*,src,tests,deals,planning,Reference,__pycache__,.env*,pyproject.toml,requirements.md,scripts'
