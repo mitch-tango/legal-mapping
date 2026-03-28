@@ -1035,10 +1035,8 @@
 
             <!-- Layout Switcher -->
             <select id="layout-switcher" data-role="layout-switcher" title="Change layout algorithm">
-                <option value="grouped" selected>Grouped</option>
-                <option value="dagre">Hierarchical</option>
-                <option value="cola">Force-directed</option>
-                <option value="breadthfirst">Tree</option>
+                <option value="dagre" selected>Hierarchical</option>
+                <option value="cola">Cola</option>
             </select>
 
             <div class="separator"></div>
@@ -1173,11 +1171,6 @@
             integrity="sha512-rZBTbo9+0shCQcVTphY34s/jVn984eDaKSbCApIAEFbNhg/3AR3CkVYkkDW8XJ9LZhhyv/Hp0THwnP3wjE/3+g=="
             crossorigin="anonymous"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-cola')"></script>
-
-    <!-- 5. Cytoscape-fcose - Compound-aware layout for grouped clusters -->
-    <script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"
-            crossorigin="anonymous"
-            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-fcose')"></script>
 
     <!-- 5. jsPDF - PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
@@ -1392,15 +1385,6 @@
         };
         const DEFAULT_CATEGORY = 'category-other';
 
-        const CATEGORY_LABELS = {
-            'category-primary': 'Core Deal Documents',
-            'category-ancillary': 'Ancillary & Support',
-            'category-financial': 'Financial Instruments',
-            'category-corporate': 'Corporate & Governance',
-            'category-regulatory': 'Regulatory & Compliance',
-            'category-closing': 'Closing Documents',
-            'category-other': 'Other Documents',
-        };
 
         // ============================================================
         // DataAdapter Class
@@ -1521,25 +1505,7 @@
                     relCount.set(rel.target_document_id, (relCount.get(rel.target_document_id) || 0) + 1);
                 }
 
-                // Collect categories that have at least one document
-                const usedCategories = new Set();
-                for (const [, doc] of this._docMap) {
-                    usedCategories.add(DOC_TYPE_CATEGORIES[doc.document_type] || DEFAULT_CATEGORY);
-                }
-
-                // Build compound parent nodes (must precede children)
-                for (const cat of usedCategories) {
-                    nodes.push({
-                        data: {
-                            id: `group-${cat}`,
-                            label: CATEGORY_LABELS[cat] || cat,
-                            isGroup: true,
-                        },
-                        classes: `compound-node ${cat}`,
-                    });
-                }
-
-                // Build nodes with parent reference for grouping
+                // Build nodes
                 for (const [id, doc] of this._docMap) {
                     const category = DOC_TYPE_CATEGORIES[doc.document_type] || DEFAULT_CATEGORY;
                     nodes.push({
@@ -1549,7 +1515,6 @@
                             docType: doc.document_type,
                             status: doc.status,
                             relationshipCount: relCount.get(id) || 0,
-                            parent: `group-${category}`,
                         },
                         classes: category,
                     });
@@ -1788,7 +1753,7 @@
         // ============================================================
         const AppState = {
             activeView: 'graph',
-            layout: 'grouped',
+            layout: 'dagre',
             filters: {
                 relationshipTypes: [],
                 documentTypes: [],
@@ -1815,45 +1780,11 @@
                     return;
                 }
 
-                // Detect fCoSE availability for grouped layout
-                this._hasFcose = typeof cytoscapeFcose !== 'undefined' ||
-                    (typeof cytoscape !== 'undefined' && cytoscape.prototype && cytoscape.prototype.fcose);
-                // cytoscape-fcose auto-registers; check by trying layout name
-                try {
-                    const testCy = cytoscape({ headless: true, elements: [] });
-                    testCy.layout({ name: 'fcose' });
-                    this._hasFcose = true;
-                    testCy.destroy();
-                } catch (e) {
-                    this._hasFcose = false;
-                    console.warn('fCoSE layout not available — falling back to dagre for grouped layout');
-                    AppState.layout = 'dagre';
-                }
-
-                const initialLayout = this._hasFcose
-                    ? {
-                        name: 'fcose',
-                        quality: 'proof',
-                        randomize: true,
-                        animate: false,
-                        nodeSeparation: 120,
-                        idealEdgeLength: 180,
-                        nodeRepulsion: 8000,
-                        gravity: 0.3,
-                        gravityRange: 1.5,
-                        nestingFactor: 0.15,
-                        numIter: 2500,
-                        tile: true,
-                        tilingPaddingVertical: 30,
-                        tilingPaddingHorizontal: 30,
-                    }
-                    : { name: 'dagre', rankDir: 'TB', nodeSep: 90, rankSep: 120, animate: false };
-
                 this.cy = cytoscape({
                     container: document.getElementById(containerId),
                     elements: [...elements.nodes, ...elements.edges],
                     style: this._buildStylesheet(),
-                    layout: initialLayout,
+                    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 90, rankSep: 120, animate: false },
                     userZoomingEnabled: true,
                     userPanningEnabled: true,
                     boxSelectionEnabled: false,
@@ -1905,40 +1836,8 @@
                             'transition-timing-function': 'ease-in-out',
                         },
                     },
-                    // ── All leaf nodes — uniform professional rectangles ──
-                    { selector: 'node[label]:childless', style: { 'background-color': '#1e2a42', 'border-color': 'rgba(120, 150, 200, 0.25)', shape: 'round-rectangle' } },
-
-                    // ── Compound (group) nodes ──
-                    {
-                        selector: '$node > node', // parent selector
-                        style: {
-                            'shape': 'round-rectangle',
-                            'background-color': 'rgba(30, 35, 55, 0.6)',
-                            'background-opacity': 0.6,
-                            'border-width': 1,
-                            'border-color': 'rgba(255, 255, 255, 0.08)',
-                            'border-opacity': 0.6,
-                            'padding': '24px',
-                            'text-valign': 'top',
-                            'text-halign': 'center',
-                            'text-margin-y': -8,
-                            'font-size': '12px',
-                            'font-weight': 600,
-                            'color': 'rgba(255, 255, 255, 0.55)',
-                            'text-outline-color': 'rgba(0, 0, 0, 0.3)',
-                            'text-outline-width': 1,
-                            'min-width': '120px',
-                            'min-height': '60px',
-                        },
-                    },
-                    // ── Category-specific group tints ──
-                    { selector: '.compound-node.category-primary', style: { 'background-color': 'rgba(107, 138, 253, 0.08)', 'border-color': 'rgba(107, 138, 253, 0.2)' } },
-                    { selector: '.compound-node.category-ancillary', style: { 'background-color': 'rgba(107, 158, 138, 0.08)', 'border-color': 'rgba(107, 158, 138, 0.2)' } },
-                    { selector: '.compound-node.category-financial', style: { 'background-color': 'rgba(181, 160, 107, 0.08)', 'border-color': 'rgba(181, 160, 107, 0.2)' } },
-                    { selector: '.compound-node.category-corporate', style: { 'background-color': 'rgba(155, 143, 181, 0.08)', 'border-color': 'rgba(155, 143, 181, 0.2)' } },
-                    { selector: '.compound-node.category-regulatory', style: { 'background-color': 'rgba(107, 165, 160, 0.08)', 'border-color': 'rgba(107, 165, 160, 0.2)' } },
-                    { selector: '.compound-node.category-closing', style: { 'background-color': 'rgba(140, 155, 181, 0.08)', 'border-color': 'rgba(140, 155, 181, 0.2)' } },
-                    { selector: '.compound-node.category-other', style: { 'background-color': 'rgba(100, 100, 120, 0.08)', 'border-color': 'rgba(100, 100, 120, 0.2)' } },
+                    // ── All nodes — uniform professional rectangles ──
+                    { selector: 'node[label]', style: { 'background-color': '#1e2a42', 'border-color': 'rgba(120, 150, 200, 0.25)', shape: 'round-rectangle' } },
 
                     // ── Base edge style — lower opacity for noise reduction ──
                     {
@@ -1997,36 +1896,10 @@
                 if (!this.cy) return;
                 AppState.layout = layoutName;
                 const layoutOpts = { animate: true, animationDuration: 350, animationEasing: 'ease-in-out-cubic' };
-                if (layoutName === 'grouped') {
-                    if (!this._hasFcose) {
-                        // Fallback to dagre if fCoSE unavailable
-                        Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 90, rankSep: 120 });
-                        this.cy.layout(layoutOpts).run();
-                        return;
-                    }
-                    Object.assign(layoutOpts, {
-                        name: 'fcose',
-                        quality: 'proof',
-                        randomize: true,
-                        animate: true,
-                        animationDuration: 500,
-                        nodeSeparation: 120,
-                        idealEdgeLength: 180,
-                        nodeRepulsion: 8000,
-                        gravity: 0.3,
-                        gravityRange: 1.5,
-                        nestingFactor: 0.15,
-                        numIter: 2500,
-                        tile: true,
-                        tilingPaddingVertical: 30,
-                        tilingPaddingHorizontal: 30,
-                    });
-                } else if (layoutName === 'dagre') {
+                if (layoutName === 'dagre') {
                     Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 90, rankSep: 120 });
                 } else if (layoutName === 'cola') {
                     Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 60, edgeLength: 180 });
-                } else if (layoutName === 'breadthfirst') {
-                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 1.8 });
                 }
                 this.cy.layout(layoutOpts).run();
             }
