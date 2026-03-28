@@ -2241,11 +2241,20 @@
                     return;
                 }
 
-                this.cy = cytoscape({
-                    container: document.getElementById(containerId),
-                    elements: [...elements.nodes, ...elements.edges],
-                    style: this._buildStylesheet(),
-                    layout: {
+                // Detect fCoSE availability for grouped layout
+                this._hasFcose = false;
+                try {
+                    const testCy = cytoscape({ headless: true, elements: [] });
+                    testCy.layout({ name: 'fcose' });
+                    this._hasFcose = true;
+                    testCy.destroy();
+                } catch (e) {
+                    console.warn('fCoSE layout not available — falling back to dagre for grouped layout');
+                    AppState.layout = 'dagre';
+                }
+
+                const initialLayout = this._hasFcose
+                    ? {
                         name: 'fcose',
                         quality: 'proof',
                         randomize: true,
@@ -2260,7 +2269,14 @@
                         tile: true,
                         tilingPaddingVertical: 30,
                         tilingPaddingHorizontal: 30,
-                    },
+                    }
+                    : { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, animate: false };
+
+                this.cy = cytoscape({
+                    container: document.getElementById(containerId),
+                    elements: [...elements.nodes, ...elements.edges],
+                    style: this._buildStylesheet(),
+                    layout: initialLayout,
                     userZoomingEnabled: true,
                     userPanningEnabled: true,
                     boxSelectionEnabled: false,
@@ -2379,6 +2395,11 @@
                 AppState.layout = layoutName;
                 const layoutOpts = { animate: true, animationDuration: 500 };
                 if (layoutName === 'grouped') {
+                    if (!this._hasFcose) {
+                        Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80 });
+                        this.cy.layout(layoutOpts).run();
+                        return;
+                    }
                     Object.assign(layoutOpts, {
                         name: 'fcose',
                         quality: 'proof',
