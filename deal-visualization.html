@@ -30,32 +30,17 @@
             --severity-warning: #60a5fa;
             --severity-info: #8b8fa3;
 
-            /* Document Type Categories — desaturated, softer tones */
-            --cat-primary: #5b7fbf;
-            --cat-ancillary: #8b7abf;
-            --cat-financial: #5a9e82;
-            --cat-corporate: #c49a4a;
-            --cat-real-estate: #7b7fc4;
-            --cat-regulatory: #bf6b6b;
-            --cat-closing: #5a8a8f;
+            /* Node fill — uniform professional navy */
+            --node-fill: #1e2a42;
+            --node-border: rgba(120, 150, 200, 0.25);
 
-            /* Node fills — even softer for dark-mode backgrounds */
-            --node-primary: #2d3a5c;
-            --node-ancillary: #3a2f5c;
-            --node-financial: #1f3d32;
-            --node-corporate: #3d3220;
-            --node-real-estate: #2a2d4f;
-            --node-regulatory: #4a2424;
-            --node-closing: #1e3235;
-            --node-other: #282b38;
-
-            /* Edge Type Families — desaturated */
-            --edge-control: #c47070;
+            /* Edge Type Families — professional muted palette */
+            --edge-control: #8c9bb5;
             --edge-reference: #6b8afd;
-            --edge-financial: #5a9e82;
-            --edge-modification: #9b7fd4;
-            --edge-conditional: #c4993a;
-            --edge-term: #4aa8a0;
+            --edge-financial: #6b9e8a;
+            --edge-modification: #9b8fb5;
+            --edge-conditional: #b5a06b;
+            --edge-term: #6ba5a0;
         }
 
         /* ============================================================
@@ -656,39 +641,6 @@
             border-style: dashed;
         }
 
-        .legend-swatch {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
-            border: 1.5px solid;
-            flex-shrink: 0;
-        }
-
-        .legend-swatch-ellipse {
-            border-radius: 50%;
-        }
-
-        .legend-swatch-diamond {
-            width: 12px;
-            height: 12px;
-            transform: rotate(45deg);
-            border-radius: 2px;
-        }
-
-        .legend-swatch-hex {
-            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-            border: none;
-            width: 16px;
-            height: 14px;
-        }
-
-        .legend-swatch-tri {
-            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-            border: none;
-            width: 14px;
-            height: 13px;
-        }
-
         /* ============================================================
            Print Stylesheet
            ============================================================ */
@@ -828,12 +780,12 @@
 
             <div class="legend-group">
                 <div class="legend-group-label">Relationship Types</div>
-                <div class="legend-item"><span class="legend-line" style="background:#c47070"></span> Controls / Subordinates / Supersedes</div>
+                <div class="legend-item"><span class="legend-line" style="background:#8c9bb5"></span> Controls / Subordinates / Supersedes</div>
                 <div class="legend-item"><span class="legend-line" style="background:#6b8afd"></span> References / Incorporates</div>
-                <div class="legend-item"><span class="legend-line" style="background:#5a9e82"></span> Guarantees / Secures / Assigns / Indemnifies</div>
-                <div class="legend-item"><span class="legend-line" style="background:#9b7fd4"></span> Amends / Restricts / Restates</div>
-                <div class="legend-item"><span class="legend-line" style="background:#c4993a"></span> Triggers / Conditions Precedent / Consents</div>
-                <div class="legend-item"><span class="legend-line" style="background:#4aa8a0"></span> Defines Terms For</div>
+                <div class="legend-item"><span class="legend-line" style="background:#6b9e8a"></span> Guarantees / Secures / Assigns / Indemnifies</div>
+                <div class="legend-item"><span class="legend-line" style="background:#9b8fb5"></span> Amends / Restricts / Restates</div>
+                <div class="legend-item"><span class="legend-line" style="background:#b5a06b"></span> Triggers / Conditions Precedent / Consents</div>
+                <div class="legend-item"><span class="legend-line" style="background:#6ba5a0"></span> Defines Terms For</div>
                 <div class="legend-item"><span class="legend-line legend-line-cycle" style="background:#f87171"></span> Circular Dependency</div>
             </div>
 
@@ -842,17 +794,6 @@
                 <div class="legend-item"><span class="legend-line legend-line-solid"></span> High (solid)</div>
                 <div class="legend-item"><span class="legend-line legend-line-dashed"></span> Medium (dashed)</div>
                 <div class="legend-item"><span class="legend-line legend-line-dotted"></span> Low (dotted)</div>
-            </div>
-
-            <div class="legend-group">
-                <div class="legend-group-label">Document Categories</div>
-                <div class="legend-item"><span class="legend-swatch" style="background:#2d3a5c;border-color:rgba(91,127,191,0.35)"></span> Primary Agreement</div>
-                <div class="legend-item"><span class="legend-swatch legend-swatch-ellipse" style="background:#3a2f5c;border-color:rgba(139,122,191,0.35)"></span> Ancillary</div>
-                <div class="legend-item"><span class="legend-swatch legend-swatch-diamond" style="background:#1f3d32;border-color:rgba(90,158,130,0.35)"></span> Financial</div>
-                <div class="legend-item"><span class="legend-swatch legend-swatch-hex" style="background:#3d3220;border-color:rgba(196,154,74,0.35)"></span> Corporate</div>
-                <div class="legend-item"><span class="legend-swatch" style="background:#2a2d4f;border-color:rgba(123,127,196,0.35)"></span> Real Estate</div>
-                <div class="legend-item"><span class="legend-swatch legend-swatch-tri" style="background:#4a2424;border-color:rgba(191,107,107,0.35)"></span> Regulatory</div>
-                <div class="legend-item"><span class="legend-swatch" style="background:#1e3235;border-color:rgba(90,138,143,0.35)"></span> Closing</div>
             </div>
         </div>
     </div>
@@ -1549,15 +1490,8 @@
                             'transition-timing-function': 'ease-in-out',
                         },
                     },
-                    // ── Node categories — desaturated fills with semantic shapes ──
-                    { selector: '.category-primary', style: { 'background-color': '#2d3a5c', 'border-color': 'rgba(91, 127, 191, 0.35)', shape: 'round-rectangle' } },
-                    { selector: '.category-ancillary', style: { 'background-color': '#3a2f5c', 'border-color': 'rgba(139, 122, 191, 0.35)', shape: 'ellipse' } },
-                    { selector: '.category-financial', style: { 'background-color': '#1f3d32', 'border-color': 'rgba(90, 158, 130, 0.35)', shape: 'diamond' } },
-                    { selector: '.category-corporate', style: { 'background-color': '#3d3220', 'border-color': 'rgba(196, 154, 74, 0.35)', shape: 'hexagon' } },
-                    { selector: '.category-real-estate', style: { 'background-color': '#2a2d4f', 'border-color': 'rgba(123, 127, 196, 0.35)', shape: 'round-rectangle' } },
-                    { selector: '.category-regulatory', style: { 'background-color': '#4a2424', 'border-color': 'rgba(191, 107, 107, 0.35)', shape: 'round-triangle' } },
-                    { selector: '.category-closing', style: { 'background-color': '#1e3235', 'border-color': 'rgba(90, 138, 143, 0.35)', shape: 'cut-rectangle' } },
-                    { selector: '.category-other', style: { 'background-color': '#282b38', 'border-color': 'rgba(140, 143, 163, 0.35)', shape: 'ellipse' } },
+                    // ── All nodes — uniform professional rectangles ──
+                    { selector: 'node[label]', style: { 'background-color': '#1e2a42', 'border-color': 'rgba(120, 150, 200, 0.25)', shape: 'round-rectangle' } },
 
                     // ── Base edge style — lower opacity for noise reduction ──
                     {
@@ -1586,12 +1520,12 @@
                         },
                     },
                     // ── Edge colors by relationship family — desaturated ──
-                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#c47070', 'target-arrow-color': '#c47070' } },
+                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#8c9bb5', 'target-arrow-color': '#8c9bb5' } },
                     { selector: '.references, .incorporates', style: { 'line-color': '#6b8afd', 'target-arrow-color': '#6b8afd' } },
-                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#5a9e82', 'target-arrow-color': '#5a9e82' } },
-                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#9b7fd4', 'target-arrow-color': '#9b7fd4' } },
-                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#c4993a', 'target-arrow-color': '#c4993a' } },
-                    { selector: '.defines_terms_for', style: { 'line-color': '#4aa8a0', 'target-arrow-color': '#4aa8a0' } },
+                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#6b9e8a', 'target-arrow-color': '#6b9e8a' } },
+                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#9b8fb5', 'target-arrow-color': '#9b8fb5' } },
+                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#b5a06b', 'target-arrow-color': '#b5a06b' } },
+                    { selector: '.defines_terms_for', style: { 'line-color': '#6ba5a0', 'target-arrow-color': '#6ba5a0' } },
 
                     // ── Confidence line styles ──
                     { selector: '.high', style: { 'line-style': 'solid' } },
