@@ -167,9 +167,11 @@
             position: absolute;
             top: 0;
             left: 0;
-            background: #0f172a;
-            background-image: radial-gradient(circle, #1e293b 1px, transparent 1px);
-            background-size: 24px 24px;
+            background:
+                radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.3) 100%),
+                radial-gradient(circle, #1e293b44 1px, transparent 1px);
+            background-color: #0c1222;
+            background-size: 100% 100%, 20px 20px;
         }
 
         /* ============================================================
@@ -2217,7 +2219,7 @@
                     container: document.getElementById(containerId),
                     elements: [...elements.nodes, ...elements.edges],
                     style: this._buildStylesheet(),
-                    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, animate: false },
+                    layout: { name: 'dagre', rankDir: 'LR', nodeSep: 80, rankSep: 120, edgeSep: 30, animate: false },
                     userZoomingEnabled: true,
                     userPanningEnabled: true,
                     boxSelectionEnabled: false,
@@ -2231,59 +2233,137 @@
 
             _buildStylesheet() {
                 return [
+                    // ── Nodes: large rounded cards with glow borders ──
                     {
                         selector: 'node',
                         style: {
-                            'label': function(ele) { var n = ele.data('label') || ''; return n.length > 22 ? n.substring(0, 22) + '…' : n; },
-                            'width': function(ele) { return Math.min(90, Math.max(50, 50 + Math.sqrt(ele.degree()) * 10)); },
-                            'height': function(ele) { return Math.min(90, Math.max(50, 50 + Math.sqrt(ele.degree()) * 10)); },
-                            'font-size': '12px',
-                            'text-valign': 'bottom',
-                            'text-margin-y': 8,
-                            'text-wrap': 'ellipsis',
-                            'text-max-width': '120px',
-                            'border-width': 1,
-                            'border-color': '#475569',
-                            'border-opacity': 0.8,
-                            'color': '#e2e8f0',
-                            'text-outline-width': 2,
-                            'text-outline-color': '#0f172a',
+                            'label': function(ele) {
+                                var n = ele.data('label') || '';
+                                return n.length > 26 ? n.substring(0, 26) + '…' : n;
+                            },
+                            'width': function(ele) {
+                                return Math.min(110, Math.max(64, 64 + Math.sqrt(ele.degree()) * 14));
+                            },
+                            'height': function(ele) {
+                                return Math.min(110, Math.max(64, 64 + Math.sqrt(ele.degree()) * 14));
+                            },
                             'shape': 'round-rectangle',
+                            'corner-radius': 10,
+                            'font-size': '13px',
+                            'font-weight': 'bold',
+                            'text-valign': 'bottom',
+                            'text-halign': 'center',
+                            'text-margin-y': 10,
+                            'text-wrap': 'ellipsis',
+                            'text-max-width': '140px',
+                            'color': '#e2e8f0',
+                            'text-outline-width': 3,
+                            'text-outline-color': '#0f172a',
+                            'text-outline-opacity': 0.9,
+                            'border-width': 2,
+                            'border-color': '#475569',
+                            'border-opacity': 0.6,
+                            'background-opacity': 0.92,
+                            'overlay-padding': 6,
+                            'transition-property': 'border-width, border-color, border-opacity, background-opacity, width, height',
+                            'transition-duration': '0.2s',
                         },
                     },
-                    { selector: '.category-primary', style: { 'background-color': '#38bdf8', 'border-color': '#0ea5e9', shape: 'round-rectangle' } },
-                    { selector: '.category-ancillary', style: { 'background-color': '#c084fc', 'border-color': '#a855f7', shape: 'ellipse' } },
-                    { selector: '.category-financial', style: { 'background-color': '#34d399', 'border-color': '#10b981', shape: 'diamond' } },
-                    { selector: '.category-corporate', style: { 'background-color': '#fbbf24', 'border-color': '#f59e0b', shape: 'hexagon' } },
-                    { selector: '.category-real-estate', style: { 'background-color': '#818cf8', 'border-color': '#6366f1', shape: 'round-rectangle' } },
-                    { selector: '.category-regulatory', style: { 'background-color': '#f87171', 'border-color': '#ef4444', shape: 'round-rectangle' } },
-                    { selector: '.category-closing', style: { 'background-color': '#2dd4bf', 'border-color': '#14b8a6', shape: 'round-rectangle' } },
-                    { selector: '.category-other', style: { 'background-color': '#64748b', 'border-color': '#475569', shape: 'ellipse' } },
+                    // ── Node categories: distinct fill + matching bright border glow ──
+                    { selector: '.category-primary', style: {
+                        'background-color': '#2563eb', 'border-color': '#60a5fa', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-ancillary', style: {
+                        'background-color': '#7c3aed', 'border-color': '#c084fc', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-financial', style: {
+                        'background-color': '#059669', 'border-color': '#34d399', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-corporate', style: {
+                        'background-color': '#d97706', 'border-color': '#fbbf24', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-real-estate', style: {
+                        'background-color': '#4f46e5', 'border-color': '#818cf8', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-regulatory', style: {
+                        'background-color': '#dc2626', 'border-color': '#f87171', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-closing', style: {
+                        'background-color': '#0d9488', 'border-color': '#2dd4bf', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+                    { selector: '.category-other', style: {
+                        'background-color': '#475569', 'border-color': '#64748b', 'border-opacity': 0.7, 'shape': 'round-rectangle',
+                    }},
+
+                    // ── Edges: unbundled bezier for cleaner parallel routing ──
                     {
                         selector: 'edge',
                         style: {
-                            'width': 2,
-                            'curve-style': 'bezier',
+                            'width': 2.5,
+                            'curve-style': 'unbundled-bezier',
+                            'control-point-distances': [20],
+                            'control-point-weights': [0.5],
                             'target-arrow-shape': 'triangle',
-                            'target-arrow-color': '#475569',
-                            'line-color': '#475569',
-                            'arrow-scale': 1.3,
+                            'target-arrow-color': '#334155',
+                            'target-arrow-fill': 'filled',
+                            'arrow-scale': 1.5,
+                            'line-color': '#334155',
+                            'line-opacity': 0.7,
                             'label': '',
+                            'font-size': '10px',
+                            'color': '#94a3b8',
+                            'text-outline-width': 2,
+                            'text-outline-color': '#0f172a',
+                            'text-rotation': 'autorotate',
+                            'text-margin-y': -10,
+                            'transition-property': 'line-color, target-arrow-color, width, line-opacity',
+                            'transition-duration': '0.2s',
                         },
                     },
-                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#f87171', 'target-arrow-color': '#f87171' } },
-                    { selector: '.references, .incorporates', style: { 'line-color': '#38bdf8', 'target-arrow-color': '#38bdf8' } },
-                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#34d399', 'target-arrow-color': '#34d399' } },
-                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#c084fc', 'target-arrow-color': '#c084fc' } },
-                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#fbbf24', 'target-arrow-color': '#fbbf24' } },
-                    { selector: '.defines_terms_for', style: { 'line-color': '#2dd4bf', 'target-arrow-color': '#2dd4bf' } },
-                    { selector: '.high', style: { 'line-style': 'solid' } },
-                    { selector: '.medium', style: { 'line-style': 'dashed' } },
-                    { selector: '.low', style: { 'line-style': 'dotted' } },
-                    { selector: '.cycle', style: { 'line-color': '#dc2626', 'target-arrow-color': '#dc2626', 'line-style': 'dashed', 'width': 3 } },
-                    { selector: '.search-dimmed', style: { 'opacity': 0.2 } },
-                    { selector: '.highlighted', style: { 'border-width': 4, 'border-color': '#2563eb' } },
-                    { selector: '.neighbor-dimmed', style: { 'opacity': 0.15 } },
+                    // ── Edge colors by relationship family ──
+                    { selector: '.controls, .subordinates_to, .supersedes', style: {
+                        'line-color': '#fb7185', 'target-arrow-color': '#fb7185', 'width': 3, 'line-opacity': 0.85,
+                    }},
+                    { selector: '.references, .incorporates', style: {
+                        'line-color': '#60a5fa', 'target-arrow-color': '#60a5fa', 'line-opacity': 0.8,
+                    }},
+                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: {
+                        'line-color': '#34d399', 'target-arrow-color': '#34d399', 'line-opacity': 0.8,
+                    }},
+                    { selector: '.amends, .restricts, .restates', style: {
+                        'line-color': '#c084fc', 'target-arrow-color': '#c084fc', 'line-opacity': 0.8,
+                    }},
+                    { selector: '.triggers, .conditions_precedent, .consents_to', style: {
+                        'line-color': '#fbbf24', 'target-arrow-color': '#fbbf24', 'width': 3, 'line-opacity': 0.85,
+                    }},
+                    { selector: '.defines_terms_for', style: {
+                        'line-color': '#2dd4bf', 'target-arrow-color': '#2dd4bf', 'line-opacity': 0.8,
+                    }},
+
+                    // ── Confidence: solid/dashed/dotted + opacity variation ──
+                    { selector: '.high', style: { 'line-style': 'solid', 'line-opacity': 0.9 } },
+                    { selector: '.medium', style: { 'line-style': 'dashed', 'line-opacity': 0.65 } },
+                    { selector: '.low', style: { 'line-style': 'dotted', 'line-opacity': 0.45 } },
+
+                    // ── Cycle: bright red dashed ──
+                    { selector: '.cycle', style: {
+                        'line-color': '#f43f5e', 'target-arrow-color': '#f43f5e',
+                        'line-style': 'dashed', 'width': 4, 'line-opacity': 1,
+                    }},
+
+                    // ── Interactive states ──
+                    { selector: '.search-dimmed', style: { 'opacity': 0.12 } },
+                    { selector: '.highlighted', style: {
+                        'border-width': 4, 'border-color': '#38bdf8', 'border-opacity': 1,
+                        'background-opacity': 1, 'z-index': 999,
+                    }},
+                    { selector: '.neighbor-dimmed', style: { 'opacity': 0.08 } },
+                    { selector: 'node:active', style: {
+                        'border-width': 3, 'border-opacity': 1, 'background-opacity': 1,
+                    }},
+                    { selector: 'edge:active', style: {
+                        'width': 4, 'line-opacity': 1,
+                    }},
                 ];
             }
 
@@ -2292,11 +2372,11 @@
                 AppState.layout = layoutName;
                 const layoutOpts = { animate: true, animationDuration: 500 };
                 if (layoutName === 'dagre') {
-                    Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80 });
+                    Object.assign(layoutOpts, { name: 'dagre', rankDir: 'LR', nodeSep: 80, rankSep: 120, edgeSep: 30 });
                 } else if (layoutName === 'cola') {
-                    Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 40, edgeLength: 150 });
+                    Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 60, edgeLength: 200, convergenceThreshold: 0.01 });
                 } else if (layoutName === 'breadthfirst') {
-                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 1.5 });
+                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 2.0 });
                 }
                 this.cy.layout(layoutOpts).run();
             }
@@ -2790,10 +2870,10 @@
         // Add overlay styles to Cytoscape
         if (graphRenderer.cy) {
             graphRenderer.cy.style()
-                .selector('.finding-critical').style({ 'border-color': '#dc2626', 'border-width': 5 })
-                .selector('.finding-error').style({ 'border-color': '#d97706', 'border-width': 4 })
-                .selector('.finding-warning').style({ 'border-color': '#2563eb', 'border-width': 4 })
-                .selector('.finding-info').style({ 'border-color': '#6b7280', 'border-width': 3 })
+                .selector('.finding-critical').style({ 'border-color': '#f43f5e', 'border-width': 5, 'border-opacity': 1, 'background-opacity': 1 })
+                .selector('.finding-error').style({ 'border-color': '#f59e0b', 'border-width': 4, 'border-opacity': 1, 'background-opacity': 1 })
+                .selector('.finding-warning').style({ 'border-color': '#38bdf8', 'border-width': 4, 'border-opacity': 1, 'background-opacity': 1 })
+                .selector('.finding-info').style({ 'border-color': '#64748b', 'border-width': 3, 'border-opacity': 0.9 })
                 .update();
         }
 
