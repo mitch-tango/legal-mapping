@@ -4,40 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sample Deal - Document Dependency Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ============================================================
            CSS Custom Properties (Color Palette)
            ============================================================ */
         :root {
-            /* UI Chrome */
-            --bg-primary: #f8f9fa;
-            --bg-panel: #ffffff;
-            --border-color: #e5e7eb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
+            /* UI Chrome — Dark Professional */
+            --bg-primary: #0f1117;
+            --bg-secondary: #161822;
+            --bg-panel: #1a1d2e;
+            --bg-surface: #222539;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-hover: rgba(255, 255, 255, 0.15);
+            --text-primary: #e0e0e0;
+            --text-secondary: #8b8fa3;
+            --text-muted: #5c6078;
+            --accent: #6b8afd;
 
-            /* Severity */
-            --severity-critical: #dc2626;
-            --severity-error: #d97706;
-            --severity-warning: #2563eb;
-            --severity-info: #6b7280;
+            /* Severity — slightly muted for dark bg */
+            --severity-critical: #f87171;
+            --severity-error: #fbbf24;
+            --severity-warning: #60a5fa;
+            --severity-info: #8b8fa3;
 
-            /* Document Type Categories */
-            --cat-primary: #3b82f6;
-            --cat-ancillary: #8b5cf6;
-            --cat-financial: #10b981;
-            --cat-corporate: #f59e0b;
-            --cat-real-estate: #ef4444;
-            --cat-regulatory: #6366f1;
-            --cat-closing: #14b8a6;
+            /* Document Type Categories — desaturated, softer tones */
+            --cat-primary: #5b7fbf;
+            --cat-ancillary: #8b7abf;
+            --cat-financial: #5a9e82;
+            --cat-corporate: #c49a4a;
+            --cat-real-estate: #7b7fc4;
+            --cat-regulatory: #bf6b6b;
+            --cat-closing: #5a8a8f;
 
-            /* Edge Type Families */
-            --edge-control: #ef4444;
-            --edge-reference: #3b82f6;
-            --edge-financial: #10b981;
-            --edge-modification: #8b5cf6;
-            --edge-conditional: #f59e0b;
-            --edge-term: #14b8a6;
+            /* Node fills — even softer for dark-mode backgrounds */
+            --node-primary: #2d3a5c;
+            --node-ancillary: #3a2f5c;
+            --node-financial: #1f3d32;
+            --node-corporate: #3d3220;
+            --node-real-estate: #2a2d4f;
+            --node-regulatory: #4a2424;
+            --node-closing: #1e3235;
+            --node-other: #282b38;
+
+            /* Edge Type Families — desaturated */
+            --edge-control: #c47070;
+            --edge-reference: #6b8afd;
+            --edge-financial: #5a9e82;
+            --edge-modification: #9b7fd4;
+            --edge-conditional: #c4993a;
+            --edge-term: #4aa8a0;
         }
 
         /* ============================================================
@@ -52,7 +70,7 @@
         html, body {
             height: 100%;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: var(--text-primary);
             background: var(--bg-primary);
         }
@@ -84,7 +102,7 @@
             gap: 12px;
             height: 52px;
             padding: 0 16px;
-            background: var(--bg-panel);
+            background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
             z-index: 10;
@@ -105,7 +123,8 @@
 
         .toolbar select:hover,
         .toolbar button:hover {
-            background: var(--bg-primary);
+            background: var(--bg-surface);
+            border-color: var(--border-color-hover);
         }
 
         .toolbar input[type="text"] {
@@ -114,8 +133,9 @@
         }
 
         .toolbar input[type="text"]:focus {
-            outline: 2px solid var(--cat-primary);
+            outline: 2px solid var(--accent);
             outline-offset: -1px;
+            background: var(--bg-surface);
         }
 
         .toolbar .separator {
@@ -140,15 +160,15 @@
         }
 
         .toolbar .toggle-btn[aria-pressed="true"] {
-            background: var(--cat-primary);
-            color: white;
-            border-color: var(--cat-primary);
+            background: var(--accent);
+            color: #0f1117;
+            border-color: var(--accent);
         }
 
         .toolbar .btn-action {
-            background: var(--cat-primary);
-            color: white;
-            border: 1px solid var(--cat-primary);
+            background: var(--accent);
+            color: #0f1117;
+            border: 1px solid var(--accent);
             font-weight: 500;
         }
 
@@ -174,6 +194,7 @@
             position: absolute;
             top: 0;
             left: 0;
+            background: var(--bg-primary);
         }
 
         /* ============================================================
@@ -201,7 +222,7 @@
             width: 400px;
             height: 100%;
             background: var(--bg-panel);
-            box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
             transform: translateX(100%);
             transition: transform 0.3s ease;
             overflow-y: auto;
@@ -236,7 +257,7 @@
         }
 
         .detail-panel-close:hover {
-            background: var(--bg-primary);
+            background: var(--bg-surface);
             color: var(--text-primary);
         }
 
@@ -249,10 +270,10 @@
             top: 52px;
             right: 16px;
             width: 320px;
-            background: var(--bg-panel);
+            background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             z-index: 30;
             padding: 16px;
         }
@@ -269,10 +290,10 @@
             text-transform: uppercase;
         }
 
-        .badge-critical { background: var(--severity-critical); color: white; }
-        .badge-error { background: var(--severity-error); color: white; }
-        .badge-warning { background: var(--severity-warning); color: white; }
-        .badge-info { background: var(--severity-info); color: white; }
+        .badge-critical { background: rgba(248, 113, 113, 0.15); color: var(--severity-critical); border: 1px solid rgba(248, 113, 113, 0.3); }
+        .badge-error { background: rgba(251, 191, 36, 0.15); color: var(--severity-error); border: 1px solid rgba(251, 191, 36, 0.3); }
+        .badge-warning { background: rgba(96, 165, 250, 0.15); color: var(--severity-warning); border: 1px solid rgba(96, 165, 250, 0.3); }
+        .badge-info { background: rgba(139, 143, 163, 0.15); color: var(--severity-info); border: 1px solid rgba(139, 143, 163, 0.3); }
 
         /* ============================================================
            Print Stylesheet
@@ -1030,7 +1051,7 @@
                     container: document.getElementById(containerId),
                     elements: [...elements.nodes, ...elements.edges],
                     style: this._buildStylesheet(),
-                    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80, animate: false },
+                    layout: { name: 'dagre', rankDir: 'TB', nodeSep: 90, rankSep: 120, animate: false },
                     userZoomingEnabled: true,
                     userPanningEnabled: true,
                     boxSelectionEnabled: false,
@@ -1058,46 +1079,67 @@
                             'height': function(ele) {
                                 return Math.min(80, Math.max(40, 40 + Math.sqrt(ele.degree()) * 10));
                             },
+                            'font-family': 'Inter, system-ui, -apple-system, sans-serif',
                             'font-size': '11px',
                             'text-valign': 'bottom',
                             'text-margin-y': 6,
                             'text-wrap': 'ellipsis',
                             'text-max-width': '100px',
-                            'border-width': 2,
-                            'border-color': '#e5e7eb',
-                            'color': '#1f2937',
+                            'border-width': 1.5,
+                            'border-color': 'rgba(255, 255, 255, 0.12)',
+                            'border-opacity': 0.8,
+                            'color': '#e0e0e0',
+                            'text-outline-color': '#0f1117',
+                            'text-outline-width': 2,
+                            'overlay-padding': 4,
+                            'transition-property': 'opacity, border-width, border-color',
+                            'transition-duration': '200ms',
+                            'transition-timing-function': 'ease-in-out',
                         },
                     },
-                    // ── Node categories ──
-                    { selector: '.category-primary', style: { 'background-color': '#3b82f6', shape: 'rectangle' } },
-                    { selector: '.category-ancillary', style: { 'background-color': '#8b5cf6', shape: 'ellipse' } },
-                    { selector: '.category-financial', style: { 'background-color': '#10b981', shape: 'diamond' } },
-                    { selector: '.category-corporate', style: { 'background-color': '#f59e0b', shape: 'hexagon' } },
-                    { selector: '.category-real-estate', style: { 'background-color': '#6366f1', shape: 'round-rectangle' } },
-                    { selector: '.category-regulatory', style: { 'background-color': '#ef4444', shape: 'triangle' } },
-                    { selector: '.category-closing', style: { 'background-color': '#64748b', shape: 'cut-rectangle' } },
-                    { selector: '.category-other', style: { 'background-color': '#94a3b8', shape: 'ellipse' } },
+                    // ── Node categories — desaturated fills with semantic shapes ──
+                    { selector: '.category-primary', style: { 'background-color': '#2d3a5c', 'border-color': 'rgba(91, 127, 191, 0.35)', shape: 'round-rectangle' } },
+                    { selector: '.category-ancillary', style: { 'background-color': '#3a2f5c', 'border-color': 'rgba(139, 122, 191, 0.35)', shape: 'ellipse' } },
+                    { selector: '.category-financial', style: { 'background-color': '#1f3d32', 'border-color': 'rgba(90, 158, 130, 0.35)', shape: 'diamond' } },
+                    { selector: '.category-corporate', style: { 'background-color': '#3d3220', 'border-color': 'rgba(196, 154, 74, 0.35)', shape: 'hexagon' } },
+                    { selector: '.category-real-estate', style: { 'background-color': '#2a2d4f', 'border-color': 'rgba(123, 127, 196, 0.35)', shape: 'round-rectangle' } },
+                    { selector: '.category-regulatory', style: { 'background-color': '#4a2424', 'border-color': 'rgba(191, 107, 107, 0.35)', shape: 'round-triangle' } },
+                    { selector: '.category-closing', style: { 'background-color': '#1e3235', 'border-color': 'rgba(90, 138, 143, 0.35)', shape: 'cut-rectangle' } },
+                    { selector: '.category-other', style: { 'background-color': '#282b38', 'border-color': 'rgba(140, 143, 163, 0.35)', shape: 'ellipse' } },
 
-                    // ── Base edge style ──
+                    // ── Base edge style — lower opacity for noise reduction ──
                     {
                         selector: 'edge',
                         style: {
-                            'width': 2,
+                            'width': 1.5,
                             'curve-style': 'bezier',
                             'target-arrow-shape': 'triangle',
-                            'target-arrow-color': '#9ca3af',
-                            'line-color': '#9ca3af',
-                            'arrow-scale': 1.2,
+                            'target-arrow-color': '#4a4e6a',
+                            'line-color': '#4a4e6a',
+                            'arrow-scale': 0.9,
+                            'opacity': 0.45,
                             'label': '',
+                            'font-family': 'Inter, system-ui, -apple-system, sans-serif',
+                            'font-size': '10px',
+                            'color': '#c0c4d8',
+                            'text-background-color': '#1a1d2e',
+                            'text-background-opacity': 0.9,
+                            'text-background-padding': '3px',
+                            'text-background-shape': 'roundrectangle',
+                            'text-outline-color': '#1a1d2e',
+                            'text-outline-width': 1,
+                            'transition-property': 'opacity, width',
+                            'transition-duration': '200ms',
+                            'transition-timing-function': 'ease-in-out',
                         },
                     },
-                    // ── Edge colors by relationship family ──
-                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#ef4444', 'target-arrow-color': '#ef4444' } },
-                    { selector: '.references, .incorporates', style: { 'line-color': '#3b82f6', 'target-arrow-color': '#3b82f6' } },
-                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#10b981', 'target-arrow-color': '#10b981' } },
-                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#8b5cf6', 'target-arrow-color': '#8b5cf6' } },
-                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b' } },
-                    { selector: '.defines_terms_for', style: { 'line-color': '#14b8a6', 'target-arrow-color': '#14b8a6' } },
+                    // ── Edge colors by relationship family — desaturated ──
+                    { selector: '.controls, .subordinates_to, .supersedes', style: { 'line-color': '#c47070', 'target-arrow-color': '#c47070' } },
+                    { selector: '.references, .incorporates', style: { 'line-color': '#6b8afd', 'target-arrow-color': '#6b8afd' } },
+                    { selector: '.guarantees, .secures, .assigns, .indemnifies', style: { 'line-color': '#5a9e82', 'target-arrow-color': '#5a9e82' } },
+                    { selector: '.amends, .restricts, .restates', style: { 'line-color': '#9b7fd4', 'target-arrow-color': '#9b7fd4' } },
+                    { selector: '.triggers, .conditions_precedent, .consents_to', style: { 'line-color': '#c4993a', 'target-arrow-color': '#c4993a' } },
+                    { selector: '.defines_terms_for', style: { 'line-color': '#4aa8a0', 'target-arrow-color': '#4aa8a0' } },
 
                     // ── Confidence line styles ──
                     { selector: '.high', style: { 'line-style': 'solid' } },
@@ -1105,25 +1147,29 @@
                     { selector: '.low', style: { 'line-style': 'dotted' } },
 
                     // ── Cycle edges ──
-                    { selector: '.cycle', style: { 'line-color': '#dc2626', 'target-arrow-color': '#dc2626', 'line-style': 'dashed', 'width': 3 } },
+                    { selector: '.cycle', style: { 'line-color': '#f87171', 'target-arrow-color': '#f87171', 'line-style': 'dashed', 'width': 2.5, 'opacity': 0.7 } },
+
+                    // ── Node hover — brighten connected edges ──
+                    { selector: 'node:active', style: { 'overlay-color': 'rgba(107, 138, 253, 0.15)', 'overlay-padding': 8 } },
 
                     // ── Visual state classes ──
-                    { selector: '.search-dimmed', style: { 'opacity': 0.2 } },
-                    { selector: '.highlighted', style: { 'border-width': 4, 'border-color': '#2563eb' } },
-                    { selector: '.neighbor-dimmed', style: { 'opacity': 0.15 } },
+                    { selector: '.search-dimmed', style: { 'opacity': 0.12 } },
+                    { selector: '.highlighted', style: { 'border-width': 3, 'border-color': '#6b8afd', 'border-opacity': 1 } },
+                    { selector: '.highlighted-edge', style: { 'opacity': 1, 'width': 2.5 } },
+                    { selector: '.neighbor-dimmed', style: { 'opacity': 0.08 } },
                 ];
             }
 
             applyLayout(layoutName) {
                 if (!this.cy) return;
                 AppState.layout = layoutName;
-                const layoutOpts = { animate: true, animationDuration: 500 };
+                const layoutOpts = { animate: true, animationDuration: 350, animationEasing: 'ease-in-out-cubic' };
                 if (layoutName === 'dagre') {
-                    Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 60, rankSep: 80 });
+                    Object.assign(layoutOpts, { name: 'dagre', rankDir: 'TB', nodeSep: 90, rankSep: 120 });
                 } else if (layoutName === 'cola') {
-                    Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 40, edgeLength: 150 });
+                    Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 60, edgeLength: 180 });
                 } else if (layoutName === 'breadthfirst') {
-                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 1.5 });
+                    Object.assign(layoutOpts, { name: 'breadthfirst', directed: true, spacingFactor: 1.8 });
                 }
                 this.cy.layout(layoutOpts).run();
             }
@@ -1137,12 +1183,13 @@
                 this.cy.elements().addClass('neighbor-dimmed');
                 neighborhood.removeClass('neighbor-dimmed');
                 node.addClass('highlighted');
+                node.connectedEdges().addClass('highlighted-edge');
                 AppState.selectedEntity = { type: 'node', id: nodeId };
             }
 
             clearHighlight() {
                 if (!this.cy) return;
-                this.cy.elements().removeClass('neighbor-dimmed highlighted search-dimmed');
+                this.cy.elements().removeClass('neighbor-dimmed highlighted highlighted-edge search-dimmed');
                 AppState.selectedEntity = null;
             }
 
@@ -1392,6 +1439,16 @@
                     detailPanel.hide();
                 }
             });
+
+            // Hover: brighten connected edges on mouseover
+            graphRenderer.cy.on('mouseover', 'node', function(evt) {
+                if (AppState.selectedEntity) return; // Don't interfere with click selection
+                evt.target.connectedEdges().addClass('highlighted-edge');
+            });
+            graphRenderer.cy.on('mouseout', 'node', function(evt) {
+                if (AppState.selectedEntity) return;
+                evt.target.connectedEdges().removeClass('highlighted-edge');
+            });
         }
 
         // ============================================================
@@ -1614,13 +1671,45 @@
 
         const analysisOverlay = new AnalysisOverlay(graphRenderer, dataAdapter);
 
-        // Add overlay styles to Cytoscape
+        // Add overlay styles to Cytoscape — subtle outer glow via shadow + border
         if (graphRenderer.cy) {
             graphRenderer.cy.style()
-                .selector('.finding-critical').style({ 'border-color': '#dc2626', 'border-width': 5 })
-                .selector('.finding-error').style({ 'border-color': '#d97706', 'border-width': 4 })
-                .selector('.finding-warning').style({ 'border-color': '#2563eb', 'border-width': 4 })
-                .selector('.finding-info').style({ 'border-color': '#6b7280', 'border-width': 3 })
+                .selector('.finding-critical').style({
+                    'border-color': 'rgba(248, 113, 113, 0.8)',
+                    'border-width': 3,
+                    'shadow-blur': 18,
+                    'shadow-color': 'rgba(248, 113, 113, 0.5)',
+                    'shadow-offset-x': 0,
+                    'shadow-offset-y': 0,
+                    'shadow-opacity': 1,
+                })
+                .selector('.finding-error').style({
+                    'border-color': 'rgba(251, 191, 36, 0.7)',
+                    'border-width': 2.5,
+                    'shadow-blur': 14,
+                    'shadow-color': 'rgba(251, 191, 36, 0.4)',
+                    'shadow-offset-x': 0,
+                    'shadow-offset-y': 0,
+                    'shadow-opacity': 1,
+                })
+                .selector('.finding-warning').style({
+                    'border-color': 'rgba(96, 165, 250, 0.7)',
+                    'border-width': 2.5,
+                    'shadow-blur': 14,
+                    'shadow-color': 'rgba(96, 165, 250, 0.35)',
+                    'shadow-offset-x': 0,
+                    'shadow-offset-y': 0,
+                    'shadow-opacity': 1,
+                })
+                .selector('.finding-info').style({
+                    'border-color': 'rgba(139, 143, 163, 0.5)',
+                    'border-width': 2,
+                    'shadow-blur': 10,
+                    'shadow-color': 'rgba(139, 143, 163, 0.25)',
+                    'shadow-offset-x': 0,
+                    'shadow-offset-y': 0,
+                    'shadow-opacity': 1,
+                })
                 .update();
         }
 
@@ -1860,10 +1949,10 @@
         // CDN load check
         if (window.__cdnFailed) {
             const errDiv = document.createElement('div');
-            errDiv.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px';
-            errDiv.innerHTML = '<h2 style="color:#dc2626">Required libraries could not be loaded</h2>'
+            errDiv.style.cssText = 'position:fixed;inset:0;background:#0f1117;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px;color:#e0e0e0';
+            errDiv.innerHTML = '<h2 style="color:#f87171">Required libraries could not be loaded</h2>'
                 + '<p>Please check your internet connection and reload.</p>'
-                + '<p style="color:#6b7280">Failed: ' + (window.__cdnFailedLib || []).join(', ') + '</p>';
+                + '<p style="color:#8b8fa3">Failed: ' + (window.__cdnFailedLib || []).join(', ') + '</p>';
             document.body.appendChild(errDiv);
         }
 
