@@ -1525,7 +1525,8 @@
 
             <!-- Layout Switcher -->
             <select id="layout-switcher" data-role="layout-switcher" title="Change layout algorithm">
-                <option value="dagre" selected>Dagre</option>
+                <option value="grouped" selected>Grouped</option>
+                <option value="dagre">Hierarchical</option>
                 <option value="cola">Force-directed</option>
                 <option value="breadthfirst">Tree</option>
             </select>
@@ -1613,6 +1614,11 @@
     <!-- 4. Cytoscape-cola - Force-directed layout for Cytoscape -->
     <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"
             onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-cola')"></script>
+
+    <!-- 5. Cytoscape-fcose - Compound-aware layout for grouped clusters -->
+    <script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"
+            crossorigin="anonymous"
+            onerror="window.__cdnFailed = true; window.__cdnFailedLib = (window.__cdnFailedLib || []).concat('cytoscape-fcose')"></script>
 
     <!-- 5. jsPDF - PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
@@ -1821,6 +1827,16 @@
         };
         const DEFAULT_CATEGORY = 'category-other';
 
+        const CATEGORY_LABELS = {
+            'category-primary': 'Core Deal Documents',
+            'category-ancillary': 'Ancillary & Support',
+            'category-financial': 'Financial Instruments',
+            'category-corporate': 'Corporate & Governance',
+            'category-regulatory': 'Regulatory & Compliance',
+            'category-closing': 'Closing Documents',
+            'category-other': 'Other Documents',
+        };
+
         // ============================================================
         // DataAdapter Class
         // ============================================================
@@ -1940,7 +1956,25 @@
                     relCount.set(rel.target_document_id, (relCount.get(rel.target_document_id) || 0) + 1);
                 }
 
-                // Build nodes
+                // Collect categories that have at least one document
+                const usedCategories = new Set();
+                for (const [, doc] of this._docMap) {
+                    usedCategories.add(DOC_TYPE_CATEGORIES[doc.document_type] || DEFAULT_CATEGORY);
+                }
+
+                // Build compound parent nodes (must precede children)
+                for (const cat of usedCategories) {
+                    nodes.push({
+                        data: {
+                            id: `group-${cat}`,
+                            label: CATEGORY_LABELS[cat] || cat,
+                            isGroup: true,
+                        },
+                        classes: `compound-node ${cat}`,
+                    });
+                }
+
+                // Build nodes with parent reference for grouping
                 for (const [id, doc] of this._docMap) {
                     const category = DOC_TYPE_CATEGORIES[doc.document_type] || DEFAULT_CATEGORY;
                     nodes.push({
@@ -1950,6 +1984,7 @@
                             docType: doc.document_type,
                             status: doc.status,
                             relationshipCount: relCount.get(id) || 0,
+                            parent: `group-${category}`,
                         },
                         classes: category,
                     });
@@ -2188,7 +2223,7 @@
         // ============================================================
         const AppState = {
             activeView: 'graph',
-            layout: 'dagre',
+            layout: 'grouped',
             filters: {
                 relationshipTypes: [],
                 documentTypes: [],
@@ -2219,7 +2254,22 @@
                     container: document.getElementById(containerId),
                     elements: [...elements.nodes, ...elements.edges],
                     style: this._buildStylesheet(),
-                    layout: { name: 'dagre', rankDir: 'LR', nodeSep: 80, rankSep: 120, edgeSep: 30, animate: false },
+                    layout: {
+                        name: 'fcose',
+                        quality: 'proof',
+                        randomize: true,
+                        animate: false,
+                        nodeSeparation: 120,
+                        idealEdgeLength: 180,
+                        nodeRepulsion: 8000,
+                        gravity: 0.3,
+                        gravityRange: 1.5,
+                        nestingFactor: 0.15,
+                        numIter: 2500,
+                        tile: true,
+                        tilingPaddingVertical: 30,
+                        tilingPaddingHorizontal: 30,
+                    },
                     userZoomingEnabled: true,
                     userPanningEnabled: true,
                     boxSelectionEnabled: false,
@@ -2269,31 +2319,63 @@
                             'transition-duration': '0.2s',
                         },
                     },
-                    // ── Node categories: distinct fill + matching bright border glow ──
-                    { selector: '.category-primary', style: {
+                    // ── Node categories: distinct fill + matching bright border glow (leaf nodes only) ──
+                    { selector: '.category-primary:childless', style: {
                         'background-color': '#2563eb', 'border-color': '#60a5fa', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-ancillary', style: {
+                    { selector: '.category-ancillary:childless', style: {
                         'background-color': '#7c3aed', 'border-color': '#c084fc', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-financial', style: {
+                    { selector: '.category-financial:childless', style: {
                         'background-color': '#059669', 'border-color': '#34d399', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-corporate', style: {
+                    { selector: '.category-corporate:childless', style: {
                         'background-color': '#d97706', 'border-color': '#fbbf24', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-real-estate', style: {
+                    { selector: '.category-real-estate:childless', style: {
                         'background-color': '#4f46e5', 'border-color': '#818cf8', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-regulatory', style: {
+                    { selector: '.category-regulatory:childless', style: {
                         'background-color': '#dc2626', 'border-color': '#f87171', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-closing', style: {
+                    { selector: '.category-closing:childless', style: {
                         'background-color': '#0d9488', 'border-color': '#2dd4bf', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
-                    { selector: '.category-other', style: {
+                    { selector: '.category-other:childless', style: {
                         'background-color': '#475569', 'border-color': '#64748b', 'border-opacity': 0.7, 'shape': 'round-rectangle',
                     }},
+
+                    // ── Compound (group) nodes ──
+                    {
+                        selector: '$node > node',
+                        style: {
+                            'shape': 'round-rectangle',
+                            'background-color': 'rgba(30, 35, 55, 0.6)',
+                            'background-opacity': 0.6,
+                            'border-width': 1,
+                            'border-color': 'rgba(255, 255, 255, 0.08)',
+                            'border-opacity': 0.6,
+                            'padding': '24px',
+                            'text-valign': 'top',
+                            'text-halign': 'center',
+                            'text-margin-y': -8,
+                            'font-size': '12px',
+                            'font-weight': 600,
+                            'color': 'rgba(255, 255, 255, 0.55)',
+                            'text-outline-color': 'rgba(0, 0, 0, 0.3)',
+                            'text-outline-width': 1,
+                            'min-width': '120px',
+                            'min-height': '60px',
+                        },
+                    },
+                    // ── Category-specific group tints ──
+                    { selector: '.compound-node.category-primary', style: { 'background-color': 'rgba(37, 99, 235, 0.08)', 'border-color': 'rgba(96, 165, 250, 0.2)' } },
+                    { selector: '.compound-node.category-ancillary', style: { 'background-color': 'rgba(124, 58, 237, 0.08)', 'border-color': 'rgba(192, 132, 252, 0.2)' } },
+                    { selector: '.compound-node.category-financial', style: { 'background-color': 'rgba(5, 150, 105, 0.08)', 'border-color': 'rgba(52, 211, 153, 0.2)' } },
+                    { selector: '.compound-node.category-corporate', style: { 'background-color': 'rgba(217, 119, 6, 0.08)', 'border-color': 'rgba(251, 191, 36, 0.2)' } },
+                    { selector: '.compound-node.category-regulatory', style: { 'background-color': 'rgba(220, 38, 38, 0.08)', 'border-color': 'rgba(248, 113, 113, 0.2)' } },
+                    { selector: '.compound-node.category-closing', style: { 'background-color': 'rgba(13, 148, 136, 0.08)', 'border-color': 'rgba(45, 212, 191, 0.2)' } },
+                    { selector: '.compound-node.category-other', style: { 'background-color': 'rgba(71, 85, 105, 0.08)', 'border-color': 'rgba(100, 116, 139, 0.2)' } },
 
                     // ── Edges: unbundled bezier for cleaner parallel routing ──
                     {
@@ -2371,7 +2453,25 @@
                 if (!this.cy) return;
                 AppState.layout = layoutName;
                 const layoutOpts = { animate: true, animationDuration: 500 };
-                if (layoutName === 'dagre') {
+                if (layoutName === 'grouped') {
+                    Object.assign(layoutOpts, {
+                        name: 'fcose',
+                        quality: 'proof',
+                        randomize: true,
+                        animate: true,
+                        animationDuration: 500,
+                        nodeSeparation: 120,
+                        idealEdgeLength: 180,
+                        nodeRepulsion: 8000,
+                        gravity: 0.3,
+                        gravityRange: 1.5,
+                        nestingFactor: 0.15,
+                        numIter: 2500,
+                        tile: true,
+                        tilingPaddingVertical: 30,
+                        tilingPaddingHorizontal: 30,
+                    });
+                } else if (layoutName === 'dagre') {
                     Object.assign(layoutOpts, { name: 'dagre', rankDir: 'LR', nodeSep: 80, rankSep: 120, edgeSep: 30 });
                 } else if (layoutName === 'cola') {
                     Object.assign(layoutOpts, { name: 'cola', nodeSpacing: 60, edgeLength: 200, convergenceThreshold: 0.01 });
