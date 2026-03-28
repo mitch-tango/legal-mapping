@@ -262,6 +262,235 @@
         }
 
         /* ============================================================
+           Detail Panel Content Formatting
+           ============================================================ */
+        #detail-panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .dp-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.35;
+            letter-spacing: -0.01em;
+        }
+
+        .dp-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .dp-summary {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .dp-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .dp-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dp-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .dp-card-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .dp-card-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .dp-card-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .dp-provision {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .dp-provision-ref {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .dp-provision-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dp-provision-summary {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .dp-party {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .dp-party-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dp-party-role {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .dp-finding {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--border-color);
+            background: var(--bg-surface);
+        }
+
+        .dp-finding-critical { border-left-color: var(--severity-critical); background: rgba(248, 113, 113, 0.06); }
+        .dp-finding-error { border-left-color: var(--severity-error); background: rgba(251, 191, 36, 0.06); }
+        .dp-finding-warning { border-left-color: var(--severity-warning); background: rgba(96, 165, 250, 0.06); }
+        .dp-finding-info { border-left-color: var(--severity-info); }
+
+        .dp-finding-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .dp-finding-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dp-finding-desc {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .dp-edge-direction {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .dp-edge-arrow {
+            color: var(--text-muted);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .dp-edge-node {
+            font-weight: 500;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dp-blockquote {
+            font-size: 13px;
+            font-style: italic;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            padding: 12px 14px;
+            background: var(--bg-surface);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .dp-obligation {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dp-obligation:last-child {
+            border-bottom: none;
+        }
+
+        .dp-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 0;
+        }
+
+        .dp-term-link {
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 12px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: border-color 0.15s ease;
+        }
+
+        .dp-term-link:hover {
+            border-color: var(--accent);
+        }
+
+        /* ============================================================
            Filter Panel (dropdown, hidden by default)
            ============================================================ */
         .filter-panel {
@@ -1307,59 +1536,142 @@
                 return span;
             }
 
+            _createSection(label) {
+                const section = document.createElement('div');
+                section.className = 'dp-section';
+                const lbl = document.createElement('div');
+                lbl.className = 'dp-section-label';
+                lbl.textContent = label;
+                section.appendChild(lbl);
+                return section;
+            }
+
+            _createDivider() {
+                const div = document.createElement('div');
+                div.className = 'dp-divider';
+                return div;
+            }
+
+            _resolvePartyName(partyId) {
+                const parties = DEAL_GRAPH.parties || {};
+                const party = parties[partyId];
+                return party ? party.canonical_name : partyId;
+            }
+
+            _formatDocType(docType) {
+                return (docType || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            }
+
             showDocumentDetail(docId) {
                 const doc = this._adapter.getDocumentDetails(docId);
                 if (!doc) return;
 
                 this._content.innerHTML = '';
-                this._content.appendChild(this._renderText('h3', doc.name, 'text-doc-name'));
 
-                const badges = document.createElement('div');
-                badges.style.cssText = 'display:flex;gap:6px;margin:8px 0';
-                badges.appendChild(this._renderBadge(doc.document_type, 'badge-info'));
-                badges.appendChild(this._renderBadge(doc.status, doc.status === 'executed' ? 'badge-info' : 'badge-warning'));
-                this._content.appendChild(badges);
+                // Title
+                this._content.appendChild(this._renderText('div', doc.name, 'dp-title'));
 
-                if (doc.summary) {
-                    this._content.appendChild(this._renderText('p', doc.summary, 'text-body'));
+                // Meta badges
+                const meta = document.createElement('div');
+                meta.className = 'dp-meta';
+                meta.appendChild(this._renderBadge(this._formatDocType(doc.document_type), 'badge-info'));
+                meta.appendChild(this._renderBadge(doc.status, doc.status === 'executed' ? 'badge-info' : 'badge-warning'));
+                if (doc.execution_date_iso) {
+                    meta.appendChild(this._renderBadge(doc.execution_date_iso, 'badge-info'));
                 }
+                this._content.appendChild(meta);
+
+                // Summary
+                if (doc.summary) {
+                    this._content.appendChild(this._renderText('p', doc.summary, 'dp-summary'));
+                }
+
+                // Divider
+                this._content.appendChild(this._createDivider());
 
                 // Parties
                 if (doc.parties && doc.parties.length) {
-                    this._content.appendChild(this._renderText('h4', 'Parties', 'text-section-header'));
-                    const ul = document.createElement('ul');
+                    const section = this._createSection('Parties');
                     for (const p of doc.parties) {
-                        const li = document.createElement('li');
-                        li.textContent = `${p.party_id} (${p.role_in_document})`;
-                        ul.appendChild(li);
+                        const row = document.createElement('div');
+                        row.className = 'dp-party';
+                        const name = document.createElement('span');
+                        name.className = 'dp-party-name';
+                        name.textContent = this._resolvePartyName(p.party_id);
+                        row.appendChild(name);
+                        const role = document.createElement('span');
+                        role.className = 'dp-party-role';
+                        role.textContent = p.role_in_document;
+                        row.appendChild(role);
+                        section.appendChild(row);
                     }
-                    this._content.appendChild(ul);
+                    this._content.appendChild(section);
                 }
 
                 // Key Provisions
                 if (doc.key_provisions && doc.key_provisions.length) {
-                    this._content.appendChild(this._renderText('h4', 'Key Provisions', 'text-section-header'));
+                    const section = this._createSection('Key Provisions');
                     for (const prov of doc.key_provisions) {
-                        const div = document.createElement('div');
-                        div.style.marginBottom = '4px';
-                        div.textContent = `${prov.section_reference}: ${prov.summary}`;
-                        this._content.appendChild(div);
+                        const card = document.createElement('div');
+                        card.className = 'dp-provision';
+                        const ref = document.createElement('span');
+                        ref.className = 'dp-provision-ref';
+                        ref.textContent = `\u00A7 ${prov.section_reference}`;
+                        card.appendChild(ref);
+                        if (prov.title) {
+                            const title = document.createElement('span');
+                            title.className = 'dp-provision-title';
+                            title.textContent = prov.title;
+                            card.appendChild(title);
+                        }
+                        const summary = document.createElement('span');
+                        summary.className = 'dp-provision-summary';
+                        summary.textContent = prov.summary;
+                        card.appendChild(summary);
+                        section.appendChild(card);
                     }
+                    this._content.appendChild(section);
+                }
+
+                // Obligations
+                if (doc.obligations && doc.obligations.length) {
+                    const section = this._createSection('Obligations');
+                    const card = document.createElement('div');
+                    card.className = 'dp-card';
+                    for (const ob of doc.obligations) {
+                        const row = document.createElement('div');
+                        row.className = 'dp-obligation';
+                        row.textContent = ob;
+                        card.appendChild(row);
+                    }
+                    section.appendChild(card);
+                    this._content.appendChild(section);
                 }
 
                 // Findings
                 const findings = this._adapter.getFindingsForEntity('document', docId);
                 if (findings.length) {
-                    this._content.appendChild(this._renderText('h4', `Findings (${findings.length})`, 'text-section-header'));
+                    const section = this._createSection(`Findings (${findings.length})`);
                     for (const f of findings) {
-                        const div = document.createElement('div');
-                        div.style.cssText = 'margin-bottom:6px;padding:4px;border-left:3px solid var(--border-color)';
-                        div.appendChild(this._renderBadge(f.severity, `badge-${f.severity.toLowerCase()}`));
+                        const row = document.createElement('div');
+                        row.className = `dp-finding dp-finding-${f.severity.toLowerCase()}`;
+                        row.appendChild(this._renderBadge(f.severity, `badge-${f.severity.toLowerCase()}`));
+                        const textWrap = document.createElement('div');
+                        textWrap.className = 'dp-finding-text';
                         const title = document.createElement('span');
-                        title.textContent = ` ${f.title}`;
-                        div.appendChild(title);
-                        this._content.appendChild(div);
+                        title.className = 'dp-finding-title';
+                        title.textContent = f.title;
+                        textWrap.appendChild(title);
+                        if (f.description) {
+                            const desc = document.createElement('span');
+                            desc.className = 'dp-finding-desc';
+                            desc.textContent = f.description;
+                            textWrap.appendChild(desc);
+                        }
+                        row.appendChild(textWrap);
+                        section.appendChild(row);
                     }
+                    this._content.appendChild(section);
                 }
 
                 this._panel.classList.add('active');
@@ -1368,25 +1680,56 @@
 
             showRelationshipDetail(edgeData) {
                 this._content.innerHTML = '';
-                this._content.appendChild(this._renderText('h3', edgeData.relType, 'text-doc-name'));
 
-                const info = document.createElement('div');
-                info.className = 'text-body';
-                info.textContent = `${edgeData.source} → ${edgeData.target}`;
-                this._content.appendChild(info);
+                // Title — formatted relationship type
+                this._content.appendChild(this._renderText('div', this._formatDocType(edgeData.relType), 'dp-title'));
 
+                // Meta
+                const meta = document.createElement('div');
+                meta.className = 'dp-meta';
+                meta.appendChild(this._renderBadge(`Confidence: ${edgeData.confidence}`,
+                    edgeData.confidence === 'high' ? 'badge-info' : edgeData.confidence === 'medium' ? 'badge-warning' : 'badge-error'));
+                this._content.appendChild(meta);
+
+                // Direction card — resolve to human-readable names
+                const dirCard = document.createElement('div');
+                dirCard.className = 'dp-edge-direction';
+                const srcName = document.createElement('span');
+                srcName.className = 'dp-edge-node';
+                const srcDoc = this._adapter.getDocumentDetails(edgeData.source);
+                srcName.textContent = srcDoc ? srcDoc.name : edgeData.source;
+                dirCard.appendChild(srcName);
+                const arrow = document.createElement('span');
+                arrow.className = 'dp-edge-arrow';
+                arrow.textContent = '\u2192';
+                dirCard.appendChild(arrow);
+                const tgtName = document.createElement('span');
+                tgtName.className = 'dp-edge-node';
+                const tgtDoc = this._adapter.getDocumentDetails(edgeData.target);
+                tgtName.textContent = tgtDoc ? tgtDoc.name : edgeData.target;
+                dirCard.appendChild(tgtName);
+                this._content.appendChild(dirCard);
+
+                // Description
                 if (edgeData.description) {
-                    this._content.appendChild(this._renderText('p', edgeData.description, 'text-body'));
+                    this._content.appendChild(this._renderText('p', edgeData.description, 'dp-summary'));
                 }
 
-                this._content.appendChild(this._renderBadge(edgeData.confidence, 'badge-info'));
-
+                // Evidence
                 if (edgeData.evidence && edgeData.evidence.quote) {
-                    this._content.appendChild(this._renderText('h4', 'Evidence', 'text-section-header'));
+                    const section = this._createSection('Evidence');
                     const quote = document.createElement('blockquote');
+                    quote.className = 'dp-blockquote';
                     quote.textContent = edgeData.evidence.quote;
-                    quote.style.cssText = 'font-style:italic;border-left:3px solid var(--border-color);padding-left:8px;margin:8px 0';
-                    this._content.appendChild(quote);
+                    section.appendChild(quote);
+                    if (edgeData.evidence.page) {
+                        const pageLbl = document.createElement('div');
+                        pageLbl.className = 'dp-card-label';
+                        pageLbl.textContent = `Page ${edgeData.evidence.page}`;
+                        pageLbl.style.marginTop = '4px';
+                        section.appendChild(pageLbl);
+                    }
+                    this._content.appendChild(section);
                 }
 
                 this._panel.classList.add('active');
@@ -1397,21 +1740,30 @@
                 if (!flow) return;
 
                 this._content.innerHTML = '';
-                this._content.appendChild(this._renderText('h3', 'Term Flow', 'text-doc-name'));
-                this._content.appendChild(this._renderText('p', `Defined in: ${flow.definingDoc}`, 'text-body'));
+                this._content.appendChild(this._renderText('div', 'Term Flow', 'dp-title'));
 
+                // Defining document
+                const defSection = this._createSection('Defined In');
+                const defDoc = this._adapter.getDocumentDetails(flow.definingDoc);
+                const defLink = document.createElement('div');
+                defLink.className = 'dp-term-link';
+                defLink.textContent = defDoc ? defDoc.name : flow.definingDoc;
+                defLink.addEventListener('click', () => this.showDocumentDetail(flow.definingDoc));
+                defSection.appendChild(defLink);
+                this._content.appendChild(defSection);
+
+                // Using documents
                 if (flow.usingDocs.length) {
-                    this._content.appendChild(this._renderText('h4', 'Used in:', 'text-section-header'));
-                    const ul = document.createElement('ul');
+                    const useSection = this._createSection(`Referenced In (${flow.usingDocs.length})`);
                     for (const docId of flow.usingDocs) {
-                        const li = document.createElement('li');
-                        li.textContent = docId;
-                        li.style.cursor = 'pointer';
-                        li.style.color = 'var(--cat-primary)';
-                        li.addEventListener('click', () => this.showDocumentDetail(docId));
-                        ul.appendChild(li);
+                        const link = document.createElement('div');
+                        link.className = 'dp-term-link';
+                        const doc = this._adapter.getDocumentDetails(docId);
+                        link.textContent = doc ? doc.name : docId;
+                        link.addEventListener('click', () => this.showDocumentDetail(docId));
+                        useSection.appendChild(link);
                     }
-                    this._content.appendChild(ul);
+                    this._content.appendChild(useSection);
                 }
 
                 this._panel.classList.add('active');
